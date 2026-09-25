@@ -126,6 +126,12 @@
   }
   .seg button:hover { border-color: var(--w-30); color: var(--w-80); }
   .seg button[aria-pressed="true"] { border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); color: var(--sky-300); }
+  .seg.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .seg.cols3 button { height: 32px; font-size: 11px; letter-spacing: 0; padding: 0 4px; }
+  .link-btn { background: none; border: 0; padding: 0; margin-top: 8px; font-size: 11px; color: var(--w-40); cursor: pointer; }
+  .link-btn:hover { color: var(--sky-300); }
+  select.input { height: 32px; width: auto; min-width: 120px; padding: 0 8px; font-size: 12px; background: transparent; cursor: pointer; }
+  select.input option { background: #10131a; color: var(--fg); }
 
   .dropzone {
     cursor: pointer; border-radius: 16px; border: 1px dashed var(--w-15); background: var(--w-02);
@@ -267,6 +273,8 @@
     <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-10.5V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></symbol>
     <symbol id="i-chest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18"/><path d="M5 8a7 4 0 0 1 14 0"/><path d="M11 12v2h2v-2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1"/></symbol>
+    <symbol id="i-gem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
   </defs>
 </svg>
@@ -399,6 +407,33 @@
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-chest"/></svg> Treasure chests</span><span class="switch"><input type="checkbox" name="max_treasure_chests" /><span class="track"></span></span></label>
       </div>
 
+      <div>
+        <p class="section-title">Story stages</p>
+        <div class="seg cols3" id="chapters">
+          <button type="button" data-ch="0" aria-pressed="false" title="Empire of Cats Chapter 1">EoC 1</button>
+          <button type="button" data-ch="1" aria-pressed="false" title="Empire of Cats Chapter 2">EoC 2</button>
+          <button type="button" data-ch="2" aria-pressed="false" title="Empire of Cats Chapter 3">EoC 3</button>
+          <button type="button" data-ch="3" aria-pressed="false" title="Into the Future Chapter 1">ItF 1</button>
+          <button type="button" data-ch="4" aria-pressed="false" title="Into the Future Chapter 2">ItF 2</button>
+          <button type="button" data-ch="5" aria-pressed="false" title="Into the Future Chapter 3">ItF 3</button>
+          <button type="button" data-ch="6" aria-pressed="false" title="Cats of the Cosmos Chapter 1">CotC 1</button>
+          <button type="button" data-ch="7" aria-pressed="false" title="Cats of the Cosmos Chapter 2">CotC 2</button>
+          <button type="button" data-ch="8" aria-pressed="false" title="Cats of the Cosmos Chapter 3">CotC 3</button>
+        </div>
+        <button type="button" class="link-btn" id="chAll">Select all</button>
+        <label class="switch-row" style="margin-top:14px"><span class="name"><svg class="i16"><use href="#i-flag"/></svg> Clear selected chapters</span><span class="switch"><input type="checkbox" name="clear_story" /><span class="track"></span></span></label>
+        <div class="switch-row" style="margin-top:14px"><label class="name" for="treasureLevel"><svg class="i16"><use href="#i-gem"/></svg> Treasures</label>
+          <select class="input" id="treasureLevel" name="treasure_level">
+            <option value="">Don't change</option>
+            <option value="0">None</option>
+            <option value="1">Inferior</option>
+            <option value="2">Normal</option>
+            <option value="3">Superior</option>
+          </select>
+        </div>
+        <p class="hint" style="margin-top:12px">Clearing a later chapter also clears the chapters it needs. Treasures apply to all 48 stages of each selected chapter.</p>
+      </div>
+
       <div id="safetyBlock">
         <p class="section-title">Safety</p>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-user"/></svg> Upload to a new account ID</span><span class="switch"><input type="checkbox" name="new_account" /><span class="track"></span></span></label>
@@ -448,6 +483,8 @@
     { key: "platinum_shards",  label: "Platinum Shards",  max: 90 },
   ];
   const LABELS = Object.fromEntries(NUMBERS.map(n => [n.key, n.label]));
+  LABELS.story_cleared = 'Story stages cleared';
+  LABELS.story_treasures = 'Story treasures';
   LABELS.cats_unlocked = "Cats unlocked";
 
   const $ = (id) => document.getElementById(id);
@@ -476,6 +513,16 @@
       e.target.value = digits ? Number(digits).toLocaleString("en-US") : "";
     });
   }
+
+  // ---- story chapters ----
+  const chapterBtns = [...document.querySelectorAll("#chapters button")];
+  chapterBtns.forEach(b => b.addEventListener("click", () =>
+    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
+  $("chAll").addEventListener("click", () => {
+    const all = chapterBtns.every(b => b.getAttribute("aria-pressed") === "true");
+    chapterBtns.forEach(b => b.setAttribute("aria-pressed", String(!all)));
+  });
+  const selectedChapters = () => chapterBtns.filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.ch);
 
   // ---- tabs ----
   document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
@@ -526,6 +573,8 @@
   $("reset").addEventListener("click", () => {
     numbers.querySelectorAll("input").forEach(i => i.value = "");
     form.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
+    $("treasureLevel").value = "";
   });
 
   // ---- errors ----
@@ -576,6 +625,15 @@
         if (c.name !== "new_account") anyEdit = true;
       }
     });
+
+    const chapters = selectedChapters(), treasure = $("treasureLevel").value;
+    const storyEdit = form.clear_story.checked || treasure !== "";
+    if (storyEdit && !chapters.length) return showError('Choose at least one chapter for the story stage edits.');
+    if (storyEdit) {
+      fd.append("story_chapters", chapters.join(","));
+      if (treasure !== "") fd.append("treasure_level", treasure);
+      anyEdit = true;
+    }
 
     if (mode === "codes") {
       const tc = form.transfer_code.value.trim(), pin = form.confirmation_code.value.trim();

@@ -115,6 +115,27 @@ def parse_edits(form) -> dict[str, Any] | str:
     for key in TOGGLES:
         if form.get(key) in ("1", "true", "on"):
             edits[key] = True
+
+    # Story stages: which chapters (0-8), whether to clear them, and a treasure level.
+    raw = (form.get("story_chapters") or "").strip()
+    chapters: list[int] = []
+    if raw:
+        parts = raw.split(",")
+        if not all(p.strip().isdigit() and int(p) <= 8 for p in parts):
+            return 'Unknown story chapter.'
+        chapters = sorted({int(p) for p in parts})
+    treasure = (form.get("treasure_level") or "").strip()
+    if treasure and treasure not in ("0", "1", "2", "3"):
+        return 'Unknown treasure level.'
+    clear_story = form.get("clear_story") in ("1", "true", "on")
+    if (clear_story or treasure) and not chapters:
+        return 'Choose at least one chapter for the story stage edits.'
+    if clear_story:
+        edits["clear_story"] = True
+    if treasure:
+        edits["treasure_level"] = int(treasure)
+    if clear_story or treasure:
+        edits["story_chapters"] = chapters
     return edits
 
 
