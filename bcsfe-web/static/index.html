@@ -146,6 +146,26 @@
   details.fold > summary:hover .chev, details.fold > summary:hover .section-title { color: var(--w-80); }
   details.fold .fold-body { padding: 2px 14px 16px; }
   .badge { font-size: 10px; color: var(--sky-300); border: 1px solid rgba(56,189,248,.4); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+  .cat-results { margin-top: 8px; max-height: 240px; overflow-y: auto; border-radius: 8px; }
+  .cat-row { display: flex; align-items: center; gap: 6px; padding: 6px 2px; border-bottom: 1px solid var(--w-05); font-size: 12px; }
+  .cat-row:last-child { border-bottom: 0; }
+  .cat-row .cid { flex: none; width: 34px; color: var(--w-40); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .cat-row .cname { flex: 1; min-width: 0; color: var(--w-80); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cat-row .cname small { display: block; font-size: 10px; color: var(--w-40); }
+  .cat-row .cname small.warn { color: rgba(252,165,165,.7); }
+  .mini-btn { flex: none; height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--w-15); background: transparent; font-size: 11px; color: var(--w-60); cursor: pointer; }
+  .mini-btn:hover { color: var(--sky-300); border-color: rgba(56,189,248,.5); }
+  .mini-btn.rm:hover { color: var(--red-300); border-color: rgba(248,113,113,.5); }
+  .mini-btn[aria-pressed="true"] { color: var(--sky-300); border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); }
+  .mini-btn.rm[aria-pressed="true"] { color: var(--red-300); border-color: rgba(248,113,113,.6); background: rgba(248,113,113,.08); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 4px 3px 8px; border-radius: 999px; font-size: 11px;
+          border: 1px solid rgba(56,189,248,.4); color: var(--sky-300); background: rgba(56,189,248,.06); }
+  .chip.rm { border-color: rgba(248,113,113,.4); color: var(--red-300); background: rgba(248,113,113,.06); }
+  .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 4px; font-size: 13px; line-height: 1; opacity: .7; }
+  .chip button:hover { opacity: 1; }
+  .chips .empty { font-size: 11px; color: var(--w-30); }
   .sub-title { font-size: 11px; color: var(--w-45); margin: 18px 0 10px; }
   .sub-title:first-child { margin-top: 0; }
 
@@ -416,6 +436,30 @@
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-sparkles"/></svg> True form unlocked cats</span><span class="switch"><input type="checkbox" name="true_form_cats" /><span class="track"></span></span></label>
       </div>
 
+      <details class="fold" id="catFold">
+        <summary><p class="section-title">Characters</p><span class="badge hidden" id="catBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <p class="sub-title">Find by ID or name</p>
+          <input class="input" id="catSearch" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. 25, 100-110 or Bahamut" style="height:36px;font-size:13px" />
+          <p class="hint" id="catStatus" style="margin-top:6px"></p>
+          <div class="cat-results" id="catResults"></div>
+          <p class="sub-title">To add</p>
+          <div class="chips" id="addChips"></div>
+          <p class="sub-title">To remove</p>
+          <div class="chips" id="removeChips"></div>
+          <p class="sub-title">Add by rarity</p>
+          <div class="seg cols3" id="rarities">
+          <button type="button" data-rarity="0" aria-pressed="false">Normal</button>
+          <button type="button" data-rarity="1" aria-pressed="false">Special</button>
+          <button type="button" data-rarity="2" aria-pressed="false">Rare</button>
+          <button type="button" data-rarity="3" aria-pressed="false">Super Rare</button>
+          <button type="button" data-rarity="4" aria-pressed="false">Uber Rare</button>
+          <button type="button" data-rarity="5" aria-pressed="false">Legend Rare</button>
+          </div>
+          <p class="hint" style="margin-top:12px">Rarity groups add only characters that are obtainable in your game version. Removing a character also resets its level and forms.</p>
+        </div>
+      </details>
+
       <div>
         <p class="section-title">Max out</p>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-package"/></svg> Battle items</span><span class="switch"><input type="checkbox" name="max_battle_items" /><span class="track"></span></span></label>
@@ -551,6 +595,128 @@
     });
   }
 
+  // ---- characters: search by ID or name, add/remove, rarity groups ----
+  const catPick = { add: new Map(), remove: new Map() };   // id -> name
+  const catLists = {};                                     // region -> catalog
+  let catalog = null;
+  const rarityBtns = [...document.querySelectorAll("#rarities button")];
+  const catText = {
+    unobtainable: 'not obtainable', none: 'None yet', loading: 'Loading the character list…',
+    loaded: '{n} characters in the {cc} game data', failed: "Couldn't load the character list. You can still add or remove characters by ID number.", more: '…and {n} more. Type more of the name or a smaller ID range.', noMatch: 'No characters found.',
+    add: 'Add', remove: 'Remove', selected: '{n} set',
+  };
+  const REGION_NAMES = {'en': 'EN', 'jp': 'JP', 'kr': 'KR', 'tw': 'TW'};
+  const catRegion = () => country || 'en';
+  const rarityName = (r) => rarityBtns[r]?.textContent || "";   // site language, as the game shows it
+
+  async function loadCatalog() {
+    const cc = catRegion();
+    if (catLists[cc]) { catalog = catLists[cc]; showCatStatus(); renderCatResults(); return; }
+    $("catStatus").textContent = catText.loading;
+    try {
+      const r = await fetch(`/api/cats?cc=${cc}`);
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error);
+      catLists[cc] = data;
+      if (cc !== catRegion()) return;
+      catalog = data;
+      showCatStatus();
+    } catch {
+      catalog = null;
+      $("catStatus").textContent = catText.failed;
+    }
+    renderCatResults();
+  }
+  function showCatStatus() {
+    $("catStatus").textContent = catText.loaded.replace("{n}", catalog.cats.length).replace("{cc}", REGION_NAMES[catalog.cc] || catalog.cc);
+  }
+  $("catFold").addEventListener("toggle", () => { if ($("catFold").open) loadCatalog(); });
+
+  function searchCats(q) {
+    q = q.trim();
+    if (!q) return [];
+    const range = q.match(/^(\d+)\s*-\s*(\d+)$/);
+    const ids = range ? [+range[1], +range[2]] : (/^\d+$/.test(q) ? [+q, +q] : null);
+    const byId = (id) => (catalog && catalog.cats[id]) || [id, "", -1, true];
+    if (ids) {
+      const out = [];
+      for (let id = ids[0]; id <= ids[1] && id < 5000; id++) {
+        if (catalog && id >= catalog.cats.length) break;
+        out.push(byId(id));
+      }
+      return out;
+    }
+    if (!catalog) return [];
+    const needle = q.toLowerCase();
+    return catalog.cats.filter(c => c[1] && c[1].toLowerCase().includes(needle));
+  }
+
+  function renderCatResults() {
+    const box = $("catResults");
+    box.innerHTML = "";
+    const q = $("catSearch").value;
+    const found = searchCats(q);
+    if (q.trim() && !found.length) {
+      const p = document.createElement("p"); p.className = "hint"; p.textContent = catText.noMatch; box.appendChild(p); return;
+    }
+    for (const [id, name, rarity, obtainable] of found.slice(0, 50)) {
+      const row = document.createElement("div"); row.className = "cat-row";
+      const cid = document.createElement("span"); cid.className = "cid"; cid.textContent = "#" + id;
+      const nm = document.createElement("span"); nm.className = "cname"; nm.textContent = name || "—";
+      const sm = document.createElement("small");
+      sm.textContent = [rarity >= 0 ? rarityName(rarity) : "", obtainable ? "" : catText.unobtainable].filter(Boolean).join(" · ");
+      if (!obtainable) sm.className = "warn";
+      nm.appendChild(sm);
+      const addB = document.createElement("button"); addB.type = "button"; addB.className = "mini-btn"; addB.textContent = "+ " + catText.add;
+      const rmB = document.createElement("button"); rmB.type = "button"; rmB.className = "mini-btn rm"; rmB.textContent = "− " + catText.remove;
+      addB.setAttribute("aria-pressed", String(catPick.add.has(id)));
+      rmB.setAttribute("aria-pressed", String(catPick.remove.has(id)));
+      addB.addEventListener("click", () => toggleCat("add", id, name));
+      rmB.addEventListener("click", () => toggleCat("remove", id, name));
+      row.append(cid, nm, addB, rmB);
+      box.appendChild(row);
+    }
+    if (found.length > 50) {
+      const p = document.createElement("p"); p.className = "hint"; p.style.marginTop = "6px";
+      p.textContent = catText.more.replace("{n}", found.length - 50); box.appendChild(p);
+    }
+  }
+  $("catSearch").addEventListener("input", renderCatResults);
+  $("catSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+
+  function toggleCat(list, id, name) {
+    const other = list === "add" ? "remove" : "add";
+    if (catPick[list].has(id)) catPick[list].delete(id);
+    else { catPick[list].set(id, name); catPick[other].delete(id); }
+    renderCatChips(); renderCatResults();
+  }
+  function renderCatChips() {
+    for (const [list, boxId] of [["add", "addChips"], ["remove", "removeChips"]]) {
+      const box = $(boxId); box.innerHTML = "";
+      if (!catPick[list].size) {
+        const e = document.createElement("span"); e.className = "empty"; e.textContent = catText.none; box.appendChild(e);
+      }
+      for (const [id, name] of [...catPick[list]].sort((a, b) => a[0] - b[0])) {
+        const chip = document.createElement("span"); chip.className = "chip" + (list === "remove" ? " rm" : "");
+        const t = document.createElement("span"); t.textContent = `#${id} ${name || ""}`.trim();
+        const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "×");
+        x.addEventListener("click", () => { catPick[list].delete(id); renderCatChips(); renderCatResults(); });
+        chip.append(t, x); box.appendChild(chip);
+      }
+    }
+    updateCatBadge();
+  }
+  rarityBtns.forEach(b => b.addEventListener("click", () => {
+    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); updateCatBadge();
+  }));
+  const selectedRarities = () => rarityBtns.filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.rarity);
+  function updateCatBadge() {
+    const n = catPick.add.size + catPick.remove.size + selectedRarities().length;
+    $("catBadge").textContent = catText.selected.replace("{n}", n);
+    $("catBadge").classList.toggle("hidden", n === 0);
+  }
+  renderCatChips();
+
   // ---- story chapters ----
   const chapterBtns = [...document.querySelectorAll("#chapters button")];
   chapterBtns.forEach(b => b.addEventListener("click", () =>
@@ -591,6 +757,7 @@
   }));
   function setCountry(cc) {
     country = cc;
+    if ($("catFold").open) loadCatalog();
     document.querySelectorAll("#country button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cc === cc)));
   }
 
@@ -621,6 +788,8 @@
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
     $("mapCrowns").value = "0";
+    catPick.add.clear(); catPick.remove.clear(); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
+    $("catSearch").value = ""; renderCatChips(); renderCatResults();
     updateStageBadge();
   });
 
@@ -675,6 +844,9 @@
 
     const mapGroups = [...form.querySelectorAll('input[name^="clear_"][data-stage-edit]:checked')].filter(c => c.name !== "clear_story");
     if (mapGroups.length) { fd.append("map_crowns", $("mapCrowns").value); anyEdit = true; }
+    if (catPick.add.size) { fd.append("add_cats", [...catPick.add.keys()].join(",")); anyEdit = true; }
+    if (catPick.remove.size) { fd.append("remove_cats", [...catPick.remove.keys()].join(",")); anyEdit = true; }
+    if (selectedRarities().length) { fd.append("add_rarities", selectedRarities().join(",")); anyEdit = true; }
     const chapters = selectedChapters(), treasure = $("treasureLevel").value;
     const storyEdit = form.clear_story.checked || treasure !== "";
     if (storyEdit && !chapters.length) return showError('Choose at least one chapter for the story stage edits.');

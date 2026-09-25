@@ -103,6 +103,22 @@ def run_job(job: dict[str, Any]) -> dict[str, Any]:
         shutil.rmtree(job_dir, ignore_errors=True)
 
 
+def parse_ids(raw: str, limit: int = 5000) -> list[int] | None:
+    """Parse "1, 5, 10-12" into [1, 5, 10, 11, 12]; None if malformed."""
+    ids: set[int] = set()
+    for part in raw.replace(" ", "").split(","):
+        if not part:
+            continue
+        lo, sep, hi = part.partition("-")
+        if not lo.isdigit() or (sep and not hi.isdigit()):
+            return None
+        a, b = int(lo), int(hi) if sep else int(lo)
+        if a > b or b >= limit:
+            return None
+        ids.update(range(a, b + 1))
+    return sorted(ids)
+
+
 def parse_edits(form) -> dict[str, Any] | str:
     edits: dict[str, Any] = {}
     for key in NUMERIC:
@@ -137,6 +153,19 @@ def parse_edits(form) -> dict[str, Any] | str:
     if clear_story or treasure:
         edits["story_chapters"] = chapters
 
+    # Individual characters: "25, 100-110" style ID lists; rarity groups 0-5.
+    for key in ("add_cats", "remove_cats"):
+        ids = parse_ids(form.get(key) or "")
+        if ids is None:
+            return 'Character IDs must be numbers like 25 or 100-110.'
+        if ids:
+            edits[key] = ids
+    rarities = parse_ids(form.get("add_rarities") or "")
+    if rarities is None or any(r > 5 for r in rarities):
+        return 'Unknown rarity.'
+    if rarities:
+        edits["add_rarities"] = rarities
+
     # Legend/event maps: which groups to clear and how many crowns (0 = all).
     maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab'] if form.get(f"clear_{k}") in ("1", "true", "on")]
     crowns = (form.get("map_crowns") or "0").strip()
@@ -151,6 +180,34 @@ def parse_edits(form) -> dict[str, Any] | str:
 @app.get("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
+
+
+catalog_lock = threading.Lock()
+catalog_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+CATALOG_MAX_AGE = 6 * 3600
+
+
+@app.get("/api/cats")
+def cats():
+    """Character list (id, name, rarity, obtainable) for the search box, cached per region."""
+    cc = (request.args.get("cc") or 'en').lower()
+    if cc not in COUNTRIES:
+        return fail("Unknown country.")
+    cached = catalog_cache.get(cc)
+    if cached and time.time() - cached[0] < CATALOG_MAX_AGE:
+        return jsonify(cached[1])
+    if not catalog_lock.acquire(timeout=90):
+        return fail('The character list is busy. Try again in a moment.', 503)
+    try:
+        cached = catalog_cache.get(cc)
+        if cached and time.time() - cached[0] < CATALOG_MAX_AGE:
+            return jsonify(cached[1])
+        result = run_job({"mode": "catalog", "cc": cc})
+        if result.get("ok"):
+            catalog_cache[cc] = (time.time(), result)
+        return jsonify(result), (200 if result.get("ok") else 502)
+    finally:
+        catalog_lock.release()
 
 
 @app.post("/api/edit")

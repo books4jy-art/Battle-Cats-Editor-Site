@@ -15,7 +15,9 @@ treasure chests, clear main story chapters (Empire of Cats, Into the Future,
 Cats of the Cosmos) and set their treasures (none / inferior / normal / superior).
 The collapsible **Stages** section can also clear every map of Stories of Legend, Uncanny Legends,
 Zero Legends, event stages and collab stages that exists in your game version, up to a chosen number of
-crowns. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
+crowns.
+The collapsible **Characters** section adds or removes individual characters (search by ID, ID range or
+name, using the names in your region's game data) and adds whole rarities (obtainable characters only). There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 
