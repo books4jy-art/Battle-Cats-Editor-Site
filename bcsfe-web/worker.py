@@ -153,6 +153,77 @@ def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
     return cleared
 
 
+# Rarity names in this site's language (as the game shows them).
+RARITY_NAMES = ['Normal', 'Special', 'Rare', 'Super Rare', 'Uber Rare', 'Legend Rare']
+
+
+def cat_catalog(cc: core.CountryCode) -> dict[str, Any]:
+    """Every character in the latest game data for a region: [id, name, rarity, obtainable]."""
+    save = core.SaveFile(cc=cc, load=False, gv=core.GameVersion(999999))  # newest game data
+    unit_buy = core.UnitBuy(save).unit_buy
+    if not unit_buy:
+        raise RuntimeError("couldn't download game data — try again later")
+    obtainable = {c.cat_id for c in (core.NyankoPictureBook(save).get_obtainable_cats() or [])}
+    cats = []
+    for cat_id, data in enumerate(unit_buy):
+        names = core.Cat.get_names(cat_id, save) or []
+        cats.append([cat_id, names[0] if names else "", data.rarity, cat_id in obtainable])
+    return {"ok": True, "cc": cc.get_code(), "cats": cats, "rarities": core.Cats.get_rarity_names(save)}
+
+
+def edit_cats(save: core.SaveFile, edits: dict[str, Any], attempt: Callable[[str, Callable[[], None]], None],
+              done: list[str]) -> None:
+    """Add/remove individual characters and add whole rarities (obtainable only)."""
+    add_ids = [i for i in edits.get("add_cats") or [] if i not in (edits.get("remove_cats") or [])]
+    remove_ids = edits.get("remove_cats") or []
+
+    def by_ids(ids: list[int]) -> tuple[list[Any], list[int]]:
+        cats = [save.cats.get_cat_by_id(i) for i in ids]
+        return [c for c in cats if c is not None], [i for i, c in zip(ids, cats) if c is None]
+
+    def step(label: str, fn: Callable[[], str]) -> None:
+        out: dict[str, str] = {}
+        before = len(done)
+        attempt(label, lambda: out.update(label=fn()))
+        if len(done) > before and out.get("label"):
+            done[-1] = out["label"]
+
+    for rarity in edits.get("add_rarities") or []:
+        def add_rarity(rarity: int = rarity) -> str:
+            obtainable = save.cats.get_cats_obtainable(save)
+            if obtainable is None:
+                raise RuntimeError("couldn't download game data — try again later")
+            ids = {c.id for c in obtainable}
+            cats = [c for c in save.cats.get_cats_rarity(save, rarity) if c.id in ids and c.id not in remove_ids]
+            for cat in cats:
+                cat.unlock(save)
+            name = RARITY_NAMES[rarity] if rarity < len(RARITY_NAMES) else str(rarity)
+            return 'Added all obtainable {name}: {n}'.format(name=name, n=len(cats))
+        step('Add by rarity', add_rarity)
+
+    if add_ids:
+        def add() -> str:
+            cats, missing = by_ids(add_ids)
+            if not cats:
+                raise RuntimeError('none of these IDs are in this save')
+            for cat in cats:
+                cat.unlock(save)
+            label = f"Added {len(cats)} character{'' if len(cats) == 1 else 's'}"
+            return label + (' (not in this save: {ids})'.format(ids=", ".join(map(str, missing))) if missing else "")
+        step('Add', add)
+
+    if remove_ids:
+        def remove() -> str:
+            cats, missing = by_ids(remove_ids)
+            if not cats:
+                raise RuntimeError('none of these IDs are in this save')
+            for cat in cats:  # like the BCSFE CLI with its default reset_cat_data setting
+                cat.remove(reset=True, save_file=save)
+            label = f"Removed {len(cats)} character{'' if len(cats) == 1 else 's'}"
+            return label + (' (not in this save: {ids})'.format(ids=", ".join(map(str, missing))) if missing else "")
+        step('Remove', remove)
+
+
 def clear_story_chapter(chapter: Any) -> None:
     """Clear all 48 stages without lowering existing clear counts."""
     for stage in chapter.stages[:STORY_STAGES]:
@@ -351,6 +422,12 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
                 if len(done) > before:
                     done[-1] = '{group}: {n} maps cleared ({crowns})'.format(group=MAP_GROUP_NAMES[key], n=result["n"], crowns=crown_text)
 
+    # Individual characters and rarity groups (unlocking needs game data too).
+    if edits.get("add_cats") or edits.get("remove_cats") or edits.get("add_rarities"):
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            edit_cats(save, edits, attempt, done)
+
     # Cat edits need game data (downloaded and cached in data_dir).
     if edits.get("unlock_cats") or edits.get("true_form_cats"):
         with game_data_lock(data_dir):
@@ -386,6 +463,11 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
 
     cc = core.CountryCode.from_code(job["cc"]) if job.get("cc") else None
     result: dict[str, Any] = {"ok": False}
+
+    if job["mode"] == "catalog":
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            return cat_catalog(cc or core.CountryCode.from_code("en"))
 
     # ---- load the save ----------------------------------------------------
     if job["mode"] == "codes":
