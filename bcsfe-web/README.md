@@ -26,21 +26,21 @@ Only you can reach it at this address. To let other people use it, host it (belo
 
 ## Put it online (works on any device)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/books4jy-art/battle-cats-save-editor)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/books4jy-art/Battle-Cats-Editor-Site)
 
-1. On GitHub, create a **public** repository named `battle-cats-save-editor`. Click
+1. On GitHub, create a **public** repository named `Battle-Cats-Editor-Site`. Click
    **uploading an existing file**, drag in everything from this folder (including the `static`
    folder), and click **Commit changes**.
 2. Click the **Deploy to Render** button above (or open
-   <https://render.com/deploy?repo=https://github.com/books4jy-art/battle-cats-save-editor>).
+   <https://render.com/deploy?repo=https://github.com/books4jy-art/Battle-Cats-Editor-Site>).
    Sign in to Render with GitHub, then click **Deploy Blueprint**. `render.yaml` fills in all the settings.
-3. After a few minutes Render shows a link like `https://battle-cats-save-editor.onrender.com`.
+3. After a few minutes Render shows a link like `https://battle-cats-editor-site.onrender.com`.
    Open it on any phone, tablet or computer.
 
 On the free plan, the site sleeps after 15 minutes without visitors. The first visit after that
 takes about a minute to load.
 
-If you named the repository something else, change `battle-cats-save-editor` in the link to match.
+If you named the repository something else, change `Battle-Cats-Editor-Site` in the link to match.
 
 ## How it works
 
