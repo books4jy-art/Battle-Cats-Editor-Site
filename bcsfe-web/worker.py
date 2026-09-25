@@ -73,6 +73,28 @@ LABELS = {
 }
 
 
+def accept_backup_game_data_repo() -> None:
+    """Let BCSFE fall back to its backup game-data repo without asking.
+
+    When the main repo is unreachable BCSFE asks on the terminal whether to
+    switch to its GitLab mirror. A web request can't answer, so cat edits would
+    just fail; answer yes instead. Every other question still raises EOFError.
+    """
+    from bcsfe.core.server import game_data_getter
+
+    ask = game_data_getter.dialog_creator.yes_no_key
+    if getattr(ask, "_accepts_backup_repo", False):
+        return
+
+    def yes_no_key(key: str, *args: Any, **kwargs: Any) -> bool:
+        if key == "use_alternative_repo":
+            return True
+        return ask(key, *args, **kwargs)
+
+    yes_no_key._accepts_backup_repo = True  # type: ignore[attr-defined]
+    game_data_getter.dialog_creator.yes_no_key = yes_no_key
+
+
 def migrate_data(data_dir: str) -> None:
     """Copy BCSFE's bundled files (locales, themes, max values) into data_dir."""
     core.set_data_dir_path(core.Path(data_dir))
@@ -211,6 +233,7 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
 
     # Cat edits need game data (downloaded and cached in data_dir).
     if edits.get("unlock_cats") or edits.get("true_form_cats"):
+        accept_backup_game_data_repo()
         with game_data_lock(data_dir):
             if edits.get("unlock_cats"):
                 def f():
