@@ -224,6 +224,51 @@ def edit_cats(save: core.SaveFile, edits: dict[str, Any], attempt: Callable[[str
         step('Remove', remove)
 
 
+def level_up_cats(save: core.SaveFile, spec: dict[str, Any], skip_ids: list[int]) -> str:
+    """Set base+plus levels like the BCSFE CLI's upgrade: the base level is reached by
+    levelling up one step at a time (capped at the character's limit, Catseyes counted),
+    the plus level is capped at the character's max plus level."""
+    base, plus = spec.get("base"), spec.get("plus")
+    missing: list[int] = []
+    if spec.get("target") == "all":
+        cats = save.cats.get_unlocked_cats()
+    else:
+        cats = []
+        for cat_id in spec.get("ids") or []:
+            cat = save.cats.get_cat_by_id(cat_id)
+            (cats.append(cat) if cat is not None else missing.append(cat_id))
+    cats = [c for c in cats if c.id not in skip_ids]
+    if not cats:
+        raise RuntimeError('no owned characters to level up')
+
+    capped = False
+    for cat in cats:
+        power_up = core.PowerUpHelper(cat, save)
+        if base is not None:
+            power_up.reset_upgrade()
+            if base == "max":
+                power_up.max_upgrade()
+            else:
+                power_up.upgrade_by(max(int(base) - 1, 0))
+                capped |= cat.upgrade.get_base() < int(base)
+        if plus is not None:
+            max_plus = power_up.get_max_possible_plus()
+            cat.upgrade.plus = max_plus if plus == "max" else min(int(plus), max_plus)
+            capped |= plus != "max" and int(plus) > max_plus
+        if not cat.unlocked:
+            cat.unlock(save)
+
+    level = ("" if base is None else str(base)) + ("" if plus is None else f"+{plus}")
+    level = level.replace("max", 'max')
+    n = len(cats)
+    label = 'Levelled up {n} character{s} to {level}'.format(n=n, s="" if n == 1 else "s", level=level)
+    if capped:
+        label += " (capped at each character's limit)"
+    if missing:
+        label += ' (not in this save: {ids})'.format(ids=", ".join(map(str, missing)))
+    return label
+
+
 def clear_story_chapter(chapter: Any) -> None:
     """Clear all 48 stages without lowering existing clear counts."""
     for stage in chapter.stages[:STORY_STAGES]:
@@ -427,6 +472,16 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
         accept_backup_game_data_repo()
         with game_data_lock(data_dir):
             edit_cats(save, edits, attempt, done)
+
+    # Level up after adding/removing, so "all owned" includes new characters.
+    if edits.get("upgrade"):
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            out: dict[str, str] = {}
+            before = len(done)
+            attempt('Level up', lambda: out.update(label=level_up_cats(save, edits["upgrade"], edits.get("remove_cats") or [])))
+            if len(done) > before and out.get("label"):
+                done[-1] = out["label"]
 
     # Cat edits need game data (downloaded and cached in data_dir).
     if edits.get("unlock_cats") or edits.get("true_form_cats"):

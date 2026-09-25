@@ -119,6 +119,30 @@ def parse_ids(raw: str, limit: int = 5000) -> list[int] | None:
     return sorted(ids)
 
 
+LEVEL_MAX_WORDS = ("max", "최대")
+
+
+def parse_level(text: str) -> tuple[Any, Any] | None:
+    """Parse "50+10", "50", "+10", "max+max" into (base, plus); None = keep, "max" = cap."""
+    base_s, sep, plus_s = text.replace(" ", "").lower().partition("+")
+
+    def part(s: str, low: int) -> Any:
+        if s in LEVEL_MAX_WORDS:
+            return "max"
+        if s.isdigit() and low <= int(s) <= 9999:
+            return int(s)
+        raise ValueError(s)
+
+    try:
+        base = part(base_s, 1) if base_s else None
+        plus = part(plus_s, 0) if sep and plus_s else None
+    except ValueError:
+        return None
+    if base is None and plus is None:
+        return None
+    return base, plus
+
+
 def parse_edits(form) -> dict[str, Any] | str:
     edits: dict[str, Any] = {}
     for key in NUMERIC:
@@ -165,6 +189,22 @@ def parse_edits(form) -> dict[str, Any] | str:
         return 'Unknown rarity.'
     if rarities:
         edits["add_rarities"] = rarities
+
+    # Level up: "50+10" style text for all owned or picked characters.
+    level = (form.get("upgrade_level") or "").strip()
+    if level:
+        parsed = parse_level(level)
+        if parsed is None:
+            return 'Type the level like 50+10, 30, +20 or max.'
+        target = form.get("upgrade_target") or "all"
+        ids = parse_ids(form.get("upgrade_ids") or "") if target == "picked" else []
+        if target not in ("all", "picked") or ids is None:
+            return 'Pick characters to level up with the Lv button, or choose All owned.'
+        if target == "picked" and not ids:
+            return 'Pick characters to level up with the Lv button, or choose All owned.'
+        edits["upgrade"] = {"base": parsed[0], "plus": parsed[1], "target": target, "ids": ids}
+    elif form.get("upgrade_ids"):
+        return 'Type a level for the characters to level up.'
 
     # Legend/event maps: which groups to clear and how many crowns (0 = all).
     maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab'] if form.get(f"clear_{k}") in ("1", "true", "on")]

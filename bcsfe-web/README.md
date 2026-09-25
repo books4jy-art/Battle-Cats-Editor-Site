@@ -17,7 +17,9 @@ The collapsible **Stages** section can also clear every map of Stories of Legend
 Zero Legends, event stages and collab stages that exists in your game version, up to a chosen number of
 crowns.
 The collapsible **Characters** section adds or removes individual characters (search by ID, ID range or
-name, using the names in your region's game data) and adds whole rarities (obtainable characters only). There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
+name, using the names in your region's game data) and adds whole rarities (obtainable characters only).
+Its **Level up** box sets levels like `50+10`, `30`, `+20` or `max` for all owned characters or for
+characters picked with the **Lv** button, capped at each character's limit. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 
