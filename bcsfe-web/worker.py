@@ -137,15 +137,18 @@ def game_data_lock(data_dir: str):
                 fcntl.flock(fh, fcntl.LOCK_UN)
 
 
-def reads_back_exactly(save: core.SaveFile, original: bytes) -> bool:
+def reads_back_exactly(original: bytes, cc: core.CountryCode) -> bool:
     """True if BCSFE writes the save back byte-for-byte as it came in.
 
     BCSFE's own tests require this for every save it supports. A mismatch means
     the save uses a newer format than this BCSFE version understands (new game
     versions sometimes add fields mid-save), so editing it could corrupt it.
+
+    This parses a fresh copy: after a transfer-code download BCSFE stores the
+    server's login details in the save, so that copy never matches the original.
     """
     try:
-        return save.to_data().to_bytes() == original
+        return core.SaveFile(core.Data(original), cc).to_data().to_bytes() == original
     except Exception:
         traceback.print_exc()
         return False
@@ -319,7 +322,7 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     result["before"] = snapshot(save)
 
     # ---- make sure this BCSFE version fully understands the save ------------
-    if not reads_back_exactly(save, original):
+    if not reads_back_exactly(original, save.cc):
         version = result["game_version"]
         print(f"save does not round-trip (game version {version})", file=sys.stderr)
         if job["mode"] != "codes":
