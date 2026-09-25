@@ -3,7 +3,6 @@ services:
     name: battle-cats-editor-site
     runtime: docker
     plan: free
-    rootDir: bcsfe-web
     dockerfilePath: ./bcsfe-web/Dockerfile
     dockerContext: ./bcsfe-web
     healthCheckPath: /
