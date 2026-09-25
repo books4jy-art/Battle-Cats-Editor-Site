@@ -132,6 +132,22 @@
   .link-btn:hover { color: var(--sky-300); }
   select.input { height: 32px; width: auto; min-width: 120px; padding: 0 8px; font-size: 12px; background: transparent; cursor: pointer; }
   select.input option { background: #10131a; color: var(--fg); }
+  details.fold { border: 1px solid var(--w-10); border-radius: 12px; background: var(--w-02); transition: border-color .15s; }
+  details.fold:hover, details.fold[open] { border-color: var(--w-15); }
+  details.fold > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px; border-radius: 12px; user-select: none;
+  }
+  details.fold > summary::-webkit-details-marker { display: none; }
+  details.fold > summary:focus-visible { outline: 2px solid rgba(56,189,248,.6); outline-offset: 2px; }
+  details.fold > summary .section-title { margin: 0; color: var(--w-60); }
+  details.fold > summary .chev { flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--w-40); transition: transform .2s; }
+  details.fold[open] > summary .chev { transform: rotate(180deg); }
+  details.fold > summary:hover .chev, details.fold > summary:hover .section-title { color: var(--w-80); }
+  details.fold .fold-body { padding: 2px 14px 16px; }
+  .badge { font-size: 10px; color: var(--sky-300); border: 1px solid rgba(56,189,248,.4); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+  .sub-title { font-size: 11px; color: var(--w-45); margin: 18px 0 10px; }
+  .sub-title:first-child { margin-top: 0; }
 
   .dropzone {
     cursor: pointer; border-radius: 16px; border: 1px dashed var(--w-15); background: var(--w-02);
@@ -275,6 +291,7 @@
     <symbol id="i-chest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18"/><path d="M5 8a7 4 0 0 1 14 0"/><path d="M11 12v2h2v-2"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1"/></symbol>
     <symbol id="i-gem" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.6 3.3a.5.5 0 0 1 .8 0l2.9 5.3a1 1 0 0 0 1.5.3l4.3-3.6a.5.5 0 0 1 .8.5l-2.8 10.2a1 1 0 0 1-1 .7H5.9a1 1 0 0 1-1-.7L2.1 5.8a.5.5 0 0 1 .8-.5l4.3 3.6a1 1 0 0 0 1.5-.3z"/><path d="M5 21h14"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
   </defs>
 </svg>
@@ -407,8 +424,10 @@
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-chest"/></svg> Treasure chests</span><span class="switch"><input type="checkbox" name="max_treasure_chests" /><span class="track"></span></span></label>
       </div>
 
-      <div>
-        <p class="section-title">Story stages</p>
+      <details class="fold" id="stageFold">
+        <summary><p class="section-title">Stages</p><span class="badge hidden" id="stageBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+        <p class="sub-title">Story</p>
         <div class="seg cols3" id="chapters">
           <button type="button" data-ch="0" aria-pressed="false" title="Empire of Cats Chapter 1">EoC 1</button>
           <button type="button" data-ch="1" aria-pressed="false" title="Empire of Cats Chapter 2">EoC 2</button>
@@ -421,7 +440,7 @@
           <button type="button" data-ch="8" aria-pressed="false" title="Cats of the Cosmos Chapter 3">CotC 3</button>
         </div>
         <button type="button" class="link-btn" id="chAll">Select all</button>
-        <label class="switch-row" style="margin-top:14px"><span class="name"><svg class="i16"><use href="#i-flag"/></svg> Clear selected chapters</span><span class="switch"><input type="checkbox" name="clear_story" /><span class="track"></span></span></label>
+        <label class="switch-row" style="margin-top:14px"><span class="name"><svg class="i16"><use href="#i-flag"/></svg> Clear selected chapters</span><span class="switch"><input type="checkbox" name="clear_story" data-stage-edit /><span class="track"></span></span></label>
         <div class="switch-row" style="margin-top:14px"><label class="name" for="treasureLevel"><svg class="i16"><use href="#i-gem"/></svg> Treasures</label>
           <select class="input" id="treasureLevel" name="treasure_level">
             <option value="">Don't change</option>
@@ -432,7 +451,25 @@
           </select>
         </div>
         <p class="hint" style="margin-top:12px">Clearing a later chapter also clears the chapters it needs. Treasures apply to all 48 stages of each selected chapter.</p>
-      </div>
+
+        <p class="sub-title">Legends & events</p>
+          <label class="switch-row"><span class="name">Stories of Legend</span><span class="switch"><input type="checkbox" name="clear_legend" data-stage-edit /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Uncanny Legends</span><span class="switch"><input type="checkbox" name="clear_uncanny" data-stage-edit /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Zero Legends</span><span class="switch"><input type="checkbox" name="clear_zero" data-stage-edit /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Event stages</span><span class="switch"><input type="checkbox" name="clear_event" data-stage-edit /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Collab stages</span><span class="switch"><input type="checkbox" name="clear_collab" data-stage-edit /><span class="track"></span></span></label>
+        <div class="switch-row" style="margin-top:14px"><label class="name" for="mapCrowns"><svg class="i16"><use href="#i-crown"/></svg> Crowns</label>
+          <select class="input" id="mapCrowns" name="map_crowns">
+            <option value="0">Max</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <p class="hint" style="margin-top:12px">Clears every map your game version has, up to the chosen number of crowns. Existing clear counts are kept.</p>
+        </div>
+      </details>
 
       <div id="safetyBlock">
         <p class="section-title">Safety</p>
@@ -522,6 +559,14 @@
     const all = chapterBtns.every(b => b.getAttribute("aria-pressed") === "true");
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", String(!all)));
   });
+  // collapsed stage editor: show how many stage edits are set
+  function updateStageBadge() {
+    const n = form.querySelectorAll("[data-stage-edit]:checked").length + ($("treasureLevel").value !== "" ? 1 : 0);
+    const badge = $("stageBadge");
+    badge.textContent = '{n} set'.replace("{n}", n);
+    badge.classList.toggle("hidden", n === 0);
+  }
+  $("stageFold").addEventListener("change", updateStageBadge);
   const selectedChapters = () => chapterBtns.filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.ch);
 
   // ---- tabs ----
@@ -575,6 +620,8 @@
     form.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
+    $("mapCrowns").value = "0";
+    updateStageBadge();
   });
 
   // ---- errors ----
@@ -626,6 +673,8 @@
       }
     });
 
+    const mapGroups = [...form.querySelectorAll('input[name^="clear_"][data-stage-edit]:checked')].filter(c => c.name !== "clear_story");
+    if (mapGroups.length) { fd.append("map_crowns", $("mapCrowns").value); anyEdit = true; }
     const chapters = selectedChapters(), treasure = $("treasureLevel").value;
     const storyEdit = form.clear_story.checked || treasure !== "";
     if (storyEdit && !chapters.length) return showError('Choose at least one chapter for the story stage edits.');
