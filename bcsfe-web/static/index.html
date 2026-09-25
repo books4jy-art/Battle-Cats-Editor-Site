@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Battle Cats Save Editor</title>
+<meta name="description" content="Edit your Battle Cats save with a transfer code or a SAVE_DATA file." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d12'/%3E%3Cpath d='M8 12 L8 6 L13 10 M24 12 L24 6 L19 10' stroke='%237dd3fc' stroke-width='2' fill='none' stroke-linejoin='round'/%3E%3Cellipse cx='16' cy='18' rx='9' ry='8' stroke='%237dd3fc' stroke-width='2' fill='none'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0b0d12;
+    --fg: #ffffff;
+    --sky-300: #7dd3fc;
+    --sky-400: #38bdf8;
+    --slate-900: #0f172a;
+    --red-300: #fca5a5;
+    --red-400: #f87171;
+    --w-02: rgba(255,255,255,.02);
+    --w-05: rgba(255,255,255,.05);
+    --w-10: rgba(255,255,255,.10);
+    --w-15: rgba(255,255,255,.15);
+    --w-30: rgba(255,255,255,.30);
+    --w-40: rgba(255,255,255,.40);
+    --w-45: rgba(255,255,255,.45);
+    --w-60: rgba(255,255,255,.60);
+    --w-80: rgba(255,255,255,.80);
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button, input { font: inherit; color: inherit; }
+  svg.i { width: 14px; height: 14px; flex: none; }
+  svg.i16 { width: 16px; height: 16px; flex: none; }
+
+  /* header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand svg { width: 40px; height: 40px; }
+  .eyebrow {
+    font-size: 14px; font-weight: 500; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--w-40); white-space: nowrap;
+  }
+  @media (max-width: 420px) { .eyebrow { font-size: 12px; letter-spacing: .15em; } .brand svg { width: 34px; height: 34px; } }
+  nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+  .navlink {
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--w-40); transition: color .15s; background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .navlink:hover { color: var(--w-80); }
+
+  /* layout */
+  main {
+    display: grid; gap: 24px;
+    padding: 16px 24px 40px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  @media (min-width: 768px) {
+    header { padding: 20px 40px; }
+    main { grid-template-columns: minmax(0,1fr) 320px; padding: 40px 40px 64px; }
+    aside.panel { position: sticky; top: 20px; align-self: start; }
+  }
+  h1 {
+    font-weight: 300; font-size: 30px; line-height: 1.15; letter-spacing: -.02em; margin: 0;
+  }
+  @media (min-width: 768px) { h1 { font-size: 36px; } }
+  .accent { color: var(--sky-300); }
+  .lede { margin: 12px 0 0; font-size: 14px; line-height: 1.65; color: var(--w-45); max-width: 560px; }
+
+  .card {
+    border: 1px solid var(--w-10); background: var(--w-02);
+    border-radius: 16px; padding: 24px;
+  }
+  .stack { display: flex; flex-direction: column; gap: 32px; }
+  .section-title {
+    font-size: 11px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--w-40); margin: 0 0 12px;
+  }
+  .hint { font-size: 11px; line-height: 1.6; color: var(--w-30); margin: 0; }
+
+  /* tabs (shadcn-style) */
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    background: var(--w-05); border-radius: 8px; padding: 4px; margin-top: 40px;
+  }
+  .tab {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 34px; border: 0; border-radius: 6px; background: transparent;
+    font-size: 13px; color: var(--w-60); cursor: pointer; transition: background .15s, color .15s;
+  }
+  .tab:hover { color: var(--w-80); }
+  .tab[aria-selected="true"] { background: var(--w-10); color: var(--fg); }
+
+  /* form controls */
+  .field { display: block; }
+  .field + .field { margin-top: 16px; }
+  .label { display: block; font-size: 12px; color: var(--w-60); margin-bottom: 6px; }
+  .input {
+    width: 100%; height: 40px; padding: 0 12px;
+    background: transparent; border: 1px solid var(--w-15); border-radius: 6px;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .input::placeholder { color: var(--w-30); }
+  .input:focus { border-color: rgba(56,189,248,.6); box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
+  .input.code { font-family: var(--mono); letter-spacing: .08em; text-transform: lowercase; }
+  .row2 { display: grid; gap: 16px; }
+  @media (min-width: 560px) { .row2 { grid-template-columns: 1.6fr 1fr; } }
+
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .seg button {
+    height: 36px; border-radius: 6px; border: 1px solid var(--w-15); background: transparent;
+    font-size: 12px; letter-spacing: .08em; color: var(--w-60); cursor: pointer; transition: all .15s;
+  }
+  .seg button:hover { border-color: var(--w-30); color: var(--w-80); }
+  .seg button[aria-pressed="true"] { border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); color: var(--sky-300); }
+
+  .dropzone {
+    cursor: pointer; border-radius: 16px; border: 1px dashed var(--w-15); background: var(--w-02);
+    padding: 56px 24px; text-align: center; transition: all .3s;
+  }
+  .dropzone:hover { border-color: var(--w-30); }
+  .dropzone.over { border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.05); }
+  .dropzone svg { width: 32px; height: 32px; color: rgba(125,211,252,.8); }
+  .dropzone .t1 { margin: 20px 0 0; font-size: 14px; letter-spacing: .02em; color: var(--w-80); }
+  .dropzone .t2 { margin: 4px 0 0; font-size: 12px; color: var(--w-40); }
+  .filechip {
+    display: none; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 12px; padding: 10px 12px; border: 1px solid var(--w-10); border-radius: 10px;
+    font-size: 12px; color: var(--w-80);
+  }
+  .filechip.show { display: flex; }
+  .filechip span { font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* number rows in panel */
+  .num-row { display: flex; align-items: center; gap: 10px; }
+  .num-row + .num-row { margin-top: 10px; }
+  .num-row .name { flex: 1; min-width: 0; font-size: 12px; color: var(--w-60); }
+  .num-row .name small { display: block; font-size: 10px; color: rgba(252,165,165,.7); margin-top: 1px; }
+  .num-row .input { width: 104px; height: 32px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+  .max-btn {
+    height: 32px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--w-10); background: transparent;
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--w-40); cursor: pointer; transition: all .15s;
+  }
+  .max-btn:hover { color: var(--sky-300); border-color: rgba(56,189,248,.5); }
+
+  /* switches */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+  .switch-row + .switch-row { margin-top: 14px; }
+  .switch-row .name { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--w-60); }
+  .switch { position: relative; width: 36px; height: 20px; flex: none; }
+  .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0; border-radius: 999px; background: var(--w-15); transition: background .2s;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--bg); box-shadow: 0 1px 2px rgba(0,0,0,.4); transition: transform .2s;
+  }
+  .switch input:checked + .track { background: var(--sky-400); }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+  .switch input:focus-visible + .track { outline: 2px solid rgba(56,189,248,.6); outline-offset: 2px; }
+
+  /* buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid transparent;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s, opacity .15s;
+  }
+  .btn-primary { background: var(--sky-400); color: var(--slate-900); }
+  .btn-primary:hover { background: var(--sky-300); }
+  .btn-outline { background: transparent; border-color: var(--w-15); color: var(--fg); }
+  .btn-outline:hover { background: var(--w-10); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn + .btn { margin-top: 8px; }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(15,23,42,.25); border-top-color: var(--slate-900); animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* alerts */
+  .alert-error {
+    border: 1px solid rgba(248,113,113,.2); background: rgba(248,113,113,.05);
+    color: var(--red-300); border-radius: 12px; padding: 12px 16px; font-size: 12px; line-height: 1.6;
+  }
+  .alert-note {
+    border: 1px solid var(--w-10); border-radius: 12px; padding: 12px 16px;
+    font-size: 12px; line-height: 1.6; color: var(--w-45);
+  }
+
+  /* result */
+  #result { display: none; margin-top: 24px; }
+  #result.show { display: block; }
+  .codes { display: grid; gap: 12px; }
+  @media (min-width: 560px) { .codes { grid-template-columns: 1.6fr 1fr; } }
+  .code-box {
+    border: 1px solid rgba(56,189,248,.35); background: rgba(56,189,248,.05);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .code-box .k { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--w-40); }
+  .code-box .v {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px;
+    font-family: var(--mono); font-size: 18px; letter-spacing: .06em; color: var(--sky-300); word-break: break-all;
+  }
+  .copy {
+    flex: none; display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 4px;
+    font-family: var(--font); font-size: 11px; color: var(--w-40); cursor: pointer; letter-spacing: 0;
+  }
+  .copy:hover { color: var(--w-80); }
+  .changes { margin: 0; padding: 0; list-style: none; }
+  .changes li {
+    display: flex; justify-content: space-between; gap: 12px; padding: 9px 0;
+    border-bottom: 1px solid var(--w-05); font-size: 13px;
+  }
+  .changes li:last-child { border-bottom: 0; }
+  .changes .lbl { color: var(--w-60); }
+  .changes .val { font-variant-numeric: tabular-nums; color: var(--w-45); white-space: nowrap; }
+  .changes .val b { font-weight: 500; color: var(--sky-300); }
+  .ticks { margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.9; color: var(--w-60); }
+  .ticks li::before { content: "✓"; color: var(--sky-300); margin-right: 8px; }
+  .dl-row { display: grid; gap: 8px; }
+  @media (min-width: 560px) { .dl-row { grid-template-columns: 1fr 1fr; } .dl-row .btn + .btn { margin-top: 0; } }
+
+  /* help dialog */
+  dialog {
+    max-width: 560px; width: calc(100% - 32px); padding: 0; border: 1px solid var(--w-10); border-radius: 16px;
+    background: #10131a; color: var(--fg);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
+  dialog .inner { padding: 24px; }
+  dialog h2 { margin: 0 0 16px; font-weight: 300; font-size: 22px; letter-spacing: -.01em; }
+  dialog ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: var(--w-60); }
+  dialog ol li + li { margin-top: 8px; }
+  dialog b { color: var(--w-80); font-weight: 500; }
+
+  footer { padding: 0 24px 32px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m8 17 4-4 4 4"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-cat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75Z"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.7a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7Z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.5L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-10.5V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></symbol>
+    <symbol id="i-chest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18"/><path d="M5 8a7 4 0 0 1 14 0"/><path d="M11 12v2h2v-2"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <rect x="1" y="1" width="38" height="38" rx="10" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.1)"/>
+      <path d="M11 16 L11 9 L17 13.5 M29 16 L29 9 L23 13.5" stroke="#7dd3fc" stroke-width="1.8" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      <ellipse cx="20" cy="22" rx="10.5" ry="9" stroke="#7dd3fc" stroke-width="1.8" fill="none"/>
+      <circle cx="16" cy="21" r="1.2" fill="#7dd3fc"/><circle cx="24" cy="21" r="1.2" fill="#7dd3fc"/>
+      <path d="M18.5 25 q1.5 1.2 3 0" stroke="#7dd3fc" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="eyebrow">Save Editor</span>
+  </div>
+  <nav>
+    <button class="navlink" type="button" id="openHelp"><svg class="i"><use href="#i-help"/></svg> How it works</button>
+    <a class="navlink" href="https://codeberg.org/fieryhenry/BCSFE-Python" target="_blank" rel="noopener"><svg class="i"><use href="#i-code"/></svg> BCSFE</a>
+  </nav>
+</header>
+
+<form id="form" novalidate>
+<main>
+  <section>
+    <h1>Edit your <span class="accent">Battle Cats</span> save</h1>
+    <p class="lede">
+      Enter a transfer code to edit your save and get new codes back, or drop in a
+      <span style="color:var(--w-80)">SAVE_DATA</span> file to edit it directly.
+    </p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button" role="tab" aria-selected="true" data-mode="codes"><svg class="i"><use href="#i-key"/></svg> Transfer code</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="file"><svg class="i"><use href="#i-file"/></svg> Save file</button>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <!-- transfer code mode -->
+      <div id="pane-codes">
+        <div class="row2">
+          <label class="field">
+            <span class="label">Transfer code</span>
+            <input class="input code" name="transfer_code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1a2b3c4d5" maxlength="64" />
+          </label>
+          <label class="field" style="margin-top:0">
+            <span class="label">Confirmation code</span>
+            <input class="input code" name="confirmation_code" autocomplete="off" inputmode="numeric" spellcheck="false" placeholder="e.g. 1234" maxlength="16" />
+          </label>
+        </div>
+        <p class="hint" style="margin-top:10px">In the game: <b style="color:var(--w-45);font-weight:500">Change Device → Data Transfer</b>. Codes work once, so you'll get new ones after editing.</p>
+      </div>
+
+      <!-- file mode -->
+      <div id="pane-file" class="hidden">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a save file">
+          <svg><use href="#i-upload"/></svg>
+          <p class="t1">Drop a <span style="color:#fff">SAVE_DATA</span> file here</p>
+          <p class="t2">or click to browse — leave the edits empty to just see what's inside</p>
+          <input type="file" id="fileInput" name="save_file" class="hidden" />
+        </div>
+        <div class="filechip" id="filechip"><span id="filename"></span><button type="button" class="copy" id="clearFile">Remove</button></div>
+      </div>
+
+      <div class="field" style="margin-top:20px">
+        <span class="label">Country <span id="ccOptional" class="hidden" style="color:var(--w-30)">— optional, detected automatically</span></span>
+        <div class="seg" id="country">
+          <button type="button" data-cc="en" aria-pressed="true">EN</button>
+          <button type="button" data-cc="jp" aria-pressed="false">JP</button>
+          <button type="button" data-cc="kr" aria-pressed="false">KR</button>
+          <button type="button" data-cc="tw" aria-pressed="false">TW</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="error" class="alert-error hidden" style="margin-top:24px" role="alert"></div>
+
+    <!-- result -->
+    <div id="result" class="card" aria-live="polite">
+      <div class="stack">
+        <div id="res-codes" class="hidden">
+          <p class="section-title">Your new codes</p>
+          <div class="codes">
+            <div class="code-box"><div class="k">Transfer code</div><div class="v"><span id="newTc"></span><button type="button" class="copy" data-copy="newTc"><svg class="i"><use href="#i-copy"/></svg> Copy</button></div></div>
+            <div class="code-box"><div class="k">Confirmation</div><div class="v"><span id="newPin"></span><button type="button" class="copy" data-copy="newPin"><svg class="i"><use href="#i-copy"/></svg> Copy</button></div></div>
+          </div>
+          <p class="hint" style="margin-top:10px">In the game choose <b style="color:var(--w-45);font-weight:500">Change Device → Resume Data Transfer</b> and enter these.</p>
+        </div>
+
+        <div id="res-changes" class="hidden">
+          <p class="section-title" id="changesTitle">Changes</p>
+          <ul class="changes" id="changes"></ul>
+        </div>
+
+        <div id="res-done" class="hidden">
+          <p class="section-title">Applied</p>
+          <ul class="ticks" id="done"></ul>
+        </div>
+
+        <div id="res-failed" class="alert-error hidden"></div>
+
+        <div id="res-downloads" class="hidden">
+          <div class="dl-row">
+            <button type="button" class="btn btn-primary hidden" id="dlEdited"><svg class="i16"><use href="#i-download"/></svg> Edited SAVE_DATA</button>
+            <button type="button" class="btn btn-outline hidden" id="dlOriginal"><svg class="i16"><use href="#i-download"/></svg> Original backup</button>
+          </div>
+        </div>
+
+        <p class="hint" id="res-meta"></p>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel card">
+    <div class="stack">
+      <div>
+        <p class="section-title">Items</p>
+        <div id="numbers"></div>
+      </div>
+
+      <div>
+        <p class="section-title">Cats</p>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-cat"/></svg> Unlock all cats</span><span class="switch"><input type="checkbox" name="unlock_cats" /><span class="track"></span></span></label>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-sparkles"/></svg> True form unlocked cats</span><span class="switch"><input type="checkbox" name="true_form_cats" /><span class="track"></span></span></label>
+      </div>
+
+      <div>
+        <p class="section-title">Max out</p>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-package"/></svg> Battle items</span><span class="switch"><input type="checkbox" name="max_battle_items" /><span class="track"></span></span></label>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-eye"/></svg> Catseyes</span><span class="switch"><input type="checkbox" name="max_catseyes" /><span class="track"></span></span></label>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-flask"/></svg> Catamins</span><span class="switch"><input type="checkbox" name="max_catamins" /><span class="track"></span></span></label>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-chest"/></svg> Treasure chests</span><span class="switch"><input type="checkbox" name="max_treasure_chests" /><span class="track"></span></span></label>
+      </div>
+
+      <div id="safetyBlock">
+        <p class="section-title">Safety</p>
+        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-user"/></svg> Upload to a new account ID</span><span class="switch"><input type="checkbox" name="new_account" /><span class="track"></span></span></label>
+      </div>
+
+      <div>
+        <button class="btn btn-primary" type="submit" id="submit"><span id="submitLabel">Edit &amp; upload</span></button>
+        <button class="btn btn-outline" type="button" id="reset">Clear edits</button>
+      </div>
+
+      <p class="hint">Cat Food and premium tickets carry the highest ban risk. XP, NP, battle items and unlocking cats are safer. Always keep your backup.</p>
+    </div>
+  </aside>
+</main>
+</form>
+
+<footer>
+  <p class="hint">Powered by <a href="https://codeberg.org/fieryhenry/BCSFE-Python" target="_blank" rel="noopener" style="color:var(--w-45)">BCSFE-Python</a> by fieryhenry · GPL-3.0 · Not affiliated with PONOS.</p>
+</footer>
+
+<dialog id="help">
+  <div class="inner">
+    <h2>How it works</h2>
+    <ol>
+      <li>In Battle Cats, open <b>Change Device → Data Transfer</b> and note the <b>transfer code</b> and <b>confirmation code</b>.</li>
+      <li>Enter them here, pick your country, and choose what to change on the right.</li>
+      <li>The editor downloads your save, applies the edits and uploads it again. You get <b>new codes</b> — the old ones stop working once used.</li>
+      <li>Back in the game, choose <b>Resume Data Transfer</b> and enter the new codes.</li>
+      <li>Download the <b>original backup</b> the site gives you, in case you want to undo.</li>
+    </ol>
+    <p class="hint" style="margin-top:16px">Rooted or emulator user? Use the <b>Save file</b> tab with your SAVE_DATA instead — nothing is uploaded to the game servers in that mode.</p>
+    <div style="margin-top:20px"><button class="btn btn-outline" type="button" id="closeHelp">Got it</button></div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const NUMBERS = [
+    { key: "catfood",          label: "Cat Food",         max: 45000,    risk: true },
+    { key: "xp",               label: "XP",               max: 99999999 },
+    { key: "np",               label: "NP",               max: 9999 },
+    { key: "leadership",       label: "Leadership",       max: 9999 },
+    { key: "normal_tickets",   label: "Cat Tickets",      max: 2999 },
+    { key: "rare_tickets",     label: "Rare Tickets",     max: 299,      risk: true },
+    { key: "platinum_tickets", label: "Platinum Tickets", max: 9,        risk: true },
+    { key: "legend_tickets",   label: "Legend Tickets",   max: 4,        risk: true },
+    { key: "platinum_shards",  label: "Platinum Shards",  max: 90 },
+  ];
+  const LABELS = Object.fromEntries(NUMBERS.map(n => [n.key, n.label]));
+  LABELS.cats_unlocked = "Cats unlocked";
+
+  const $ = (id) => document.getElementById(id);
+  const form = $("form");
+  let mode = "codes";
+  let country = "en";
+  let countryTouched = false;
+  let file = null;
+  let blobs = {};
+
+  // ---- item rows ----
+  const numbers = $("numbers");
+  for (const n of NUMBERS) {
+    const row = document.createElement("div");
+    row.className = "num-row";
+    row.innerHTML = `
+      <label class="name" for="n-${n.key}">${n.label}${n.risk ? "<small>higher ban risk</small>" : ""}</label>
+      <input class="input" id="n-${n.key}" name="${n.key}" inputmode="numeric" placeholder="—" autocomplete="off" />
+      <button type="button" class="max-btn" data-max="${n.key}">Max</button>`;
+    numbers.appendChild(row);
+    row.querySelector(".max-btn").addEventListener("click", () => {
+      row.querySelector("input").value = n.max.toLocaleString("en-US");
+    });
+    row.querySelector("input").addEventListener("input", (e) => {
+      const digits = e.target.value.replace(/[^\d]/g, "");
+      e.target.value = digits ? Number(digits).toLocaleString("en-US") : "";
+    });
+  }
+
+  // ---- tabs ----
+  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.mode === m)));
+    $("pane-codes").classList.toggle("hidden", m !== "codes");
+    $("pane-file").classList.toggle("hidden", m !== "file");
+    $("safetyBlock").classList.toggle("hidden", m !== "codes");
+    $("ccOptional").classList.toggle("hidden", m !== "file");
+    $("submitLabel").textContent = m === "codes" ? "Edit & upload" : "Edit file";
+    if (m === "file" && !countryTouched) setCountry(null);
+    if (m === "codes" && !country) setCountry("en");
+    hideError();
+  }
+
+  // ---- country ----
+  document.querySelectorAll("#country button").forEach(b => b.addEventListener("click", () => {
+    countryTouched = true;
+    setCountry(mode === "file" && country === b.dataset.cc ? null : b.dataset.cc);
+  }));
+  function setCountry(cc) {
+    country = cc;
+    document.querySelectorAll("#country button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cc === cc)));
+  }
+
+  // ---- dropzone ----
+  const dz = $("dropzone"), fileInput = $("fileInput");
+  dz.addEventListener("click", () => fileInput.click());
+  dz.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+  dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("over"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+  dz.addEventListener("drop", (e) => { e.preventDefault(); dz.classList.remove("over"); pickFile(e.dataTransfer.files[0]); });
+  fileInput.addEventListener("change", () => pickFile(fileInput.files[0]));
+  $("clearFile").addEventListener("click", () => pickFile(null));
+  function pickFile(f) {
+    file = f || null;
+    fileInput.value = "";
+    $("filechip").classList.toggle("show", !!file);
+    $("filename").textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(0)} KB` : "";
+  }
+
+  // ---- help ----
+  $("openHelp").addEventListener("click", () => $("help").showModal());
+  $("closeHelp").addEventListener("click", () => $("help").close());
+
+  // ---- reset ----
+  $("reset").addEventListener("click", () => {
+    numbers.querySelectorAll("input").forEach(i => i.value = "");
+    form.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+  });
+
+  // ---- errors ----
+  function showError(msg) { const e = $("error"); e.textContent = msg; e.classList.remove("hidden"); }
+  function hideError() { $("error").classList.add("hidden"); }
+
+  // ---- copy ----
+  document.querySelectorAll("[data-copy]").forEach(btn => btn.addEventListener("click", async () => {
+    const text = $(btn.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); } catch { return; }
+    const old = btn.innerHTML;
+    btn.textContent = "Copied";
+    setTimeout(() => btn.innerHTML = old, 1400);
+  }));
+
+  // ---- downloads ----
+  function b64ToBlob(b64) {
+    const bin = atob(b64); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: "application/octet-stream" });
+  }
+  function download(key, name) {
+    const blob = blobs[key]; if (!blob) return;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  $("dlEdited").addEventListener("click", () => download("edited", "SAVE_DATA"));
+  $("dlOriginal").addEventListener("click", () => download("original", "SAVE_DATA_original_backup"));
+
+  // ---- submit ----
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideError();
+
+    const fd = new FormData();
+    fd.append("mode", mode);
+    if (country) fd.append("country", country);
+    let anyEdit = false;
+    for (const n of NUMBERS) {
+      const v = $(`n-${n.key}`).value.replace(/[^\d]/g, "");
+      if (v) { fd.append(n.key, v); anyEdit = true; }
+    }
+    form.querySelectorAll('aside input[type="checkbox"]').forEach(c => {
+      if (c.checked && !(c.name === "new_account" && mode !== "codes")) {
+        fd.append(c.name, "1");
+        if (c.name !== "new_account") anyEdit = true;
+      }
+    });
+
+    if (mode === "codes") {
+      const tc = form.transfer_code.value.trim(), pin = form.confirmation_code.value.trim();
+      if (!tc || !pin) return showError("Enter both the transfer code and the confirmation code.");
+      if (!anyEdit) return showError("Choose at least one thing to edit on the right. Transfer codes only work once, so the save has to be re-uploaded with changes.");
+      fd.append("transfer_code", tc); fd.append("confirmation_code", pin);
+    } else {
+      if (!file) return showError("Choose a SAVE_DATA file first.");
+      fd.append("save_file", file, file.name);
+    }
+
+    setBusy(true);
+    let res;
+    try {
+      const r = await fetch("/api/edit", { method: "POST", body: fd });
+      res = await r.json().catch(() => ({ ok: false, error: `Server error (${r.status}).` }));
+    } catch {
+      res = { ok: false, error: "Couldn't reach the server. Check your connection and try again." };
+    } finally {
+      setBusy(false);
+    }
+    render(res, anyEdit);
+  });
+
+  function setBusy(busy) {
+    const btn = $("submit");
+    btn.disabled = busy;
+    btn.innerHTML = busy
+      ? '<span class="spinner"></span> Working… this can take a minute'
+      : `<span id="submitLabel">${mode === "codes" ? "Edit &amp; upload" : "Edit file"}</span>`;
+  }
+
+  function render(res, anyEdit) {
+    const box = $("result");
+    blobs = {};
+    ["res-codes", "res-changes", "res-done", "res-failed", "res-downloads", "dlEdited", "dlOriginal"]
+      .forEach(id => $(id).classList.add("hidden"));
+
+    if (res.error && !res.ok && !res.before) {
+      box.classList.remove("show");
+      showError(res.error);
+      return;
+    }
+    if (res.error) showError(res.error);
+
+    if (res.transfer_code) {
+      $("newTc").textContent = res.transfer_code;
+      $("newPin").textContent = res.confirmation_code;
+      $("res-codes").classList.remove("hidden");
+    }
+
+    const before = res.before || {}, after = res.after || {};
+    const list = $("changes"); list.innerHTML = "";
+    const infoOnly = !anyEdit;
+    $("changesTitle").textContent = infoOnly ? "What's in this save" : "Changes";
+    for (const [key, label] of Object.entries(LABELS)) {
+      if (!(key in after)) continue;
+      const changed = before[key] !== after[key];
+      if (!infoOnly && !changed) continue;
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="lbl"></span><span class="val"></span>`;
+      li.querySelector(".lbl").textContent = label;
+      li.querySelector(".val").innerHTML = infoOnly
+        ? `<b>${Number(after[key]).toLocaleString("en-US")}</b>`
+        : `${Number(before[key] ?? 0).toLocaleString("en-US")} → <b>${Number(after[key]).toLocaleString("en-US")}</b>`;
+      list.appendChild(li);
+    }
+    if (list.children.length) $("res-changes").classList.remove("hidden");
+
+    const done = $("done"); done.innerHTML = "";
+    for (const d of res.done || []) { const li = document.createElement("li"); li.textContent = d; done.appendChild(li); }
+    if (done.children.length) $("res-done").classList.remove("hidden");
+
+    if ((res.failed || []).length) {
+      const f = $("res-failed");
+      f.textContent = "Didn't apply: " + res.failed.join(" · ");
+      f.classList.remove("hidden");
+    }
+
+    if (res.edited_b64) { blobs.edited = b64ToBlob(res.edited_b64); $("dlEdited").classList.remove("hidden"); }
+    if (res.original_b64) { blobs.original = b64ToBlob(res.original_b64); $("dlOriginal").classList.remove("hidden"); }
+    if (blobs.edited || blobs.original) $("res-downloads").classList.remove("hidden");
+
+    $("res-meta").textContent = res.country
+      ? `Country ${res.country.toUpperCase()} · game version ${res.game_version || "?"}`
+      : "";
+    box.classList.add("show");
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (res.transfer_code) {  // codes are single-use; clear the old ones
+      form.transfer_code.value = ""; form.confirmation_code.value = "";
+    }
+  }
+})();
+</script>
+</body>
+</html>
