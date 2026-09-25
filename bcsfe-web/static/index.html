@@ -158,6 +158,15 @@
   .mini-btn.rm:hover { color: var(--red-300); border-color: rgba(248,113,113,.5); }
   .mini-btn[aria-pressed="true"] { color: var(--sky-300); border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); }
   .mini-btn.rm[aria-pressed="true"] { color: var(--red-300); border-color: rgba(248,113,113,.6); background: rgba(248,113,113,.08); }
+  .seg#levelTarget button { letter-spacing: 0; font-size: 11px; }
+  @media (max-width: 520px) {
+    .cat-row { flex-wrap: wrap; row-gap: 6px; }
+    .cat-row .cname { flex: 1 1 calc(100% - 44px); white-space: normal; }
+    .cat-row button.mini-btn:nth-of-type(1) { margin-left: 40px; }
+  }
+  .mini-btn.lv[aria-pressed="true"] { color: #fde68a; border-color: rgba(253,230,138,.6); background: rgba(253,230,138,.08); }
+  .mini-btn.lv:hover { color: #fde68a; border-color: rgba(253,230,138,.5); }
+  .chip.lv { border-color: rgba(253,230,138,.4); color: #fde68a; background: rgba(253,230,138,.06); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 4px 3px 8px; border-radius: 999px; font-size: 11px;
           border: 1px solid rgba(56,189,248,.4); color: var(--sky-300); background: rgba(56,189,248,.06); }
@@ -456,6 +465,17 @@
           <button type="button" data-rarity="4" aria-pressed="false">Uber Rare</button>
           <button type="button" data-rarity="5" aria-pressed="false">Legend Rare</button>
           </div>
+          <p class="sub-title">Level up</p>
+          <input class="input" id="levelInput" autocomplete="off" spellcheck="false" placeholder="e.g. 50+10, 30, +20 or max" style="height:36px;font-size:13px" />
+          <div class="seg" id="levelTarget" style="grid-template-columns:1fr 1fr;margin-top:8px">
+            <button type="button" data-target="all" aria-pressed="true">All owned</button>
+            <button type="button" data-target="picked" aria-pressed="false">Picked (Lv)</button>
+          </div>
+          <div id="levelPickedBox" class="hidden">
+            <p class="sub-title">To level up</p>
+            <div class="chips" id="levelChips"></div>
+          </div>
+          <p class="hint" style="margin-top:10px">Type a level like 50+10 (level + plus level). Leave a side out to keep it, e.g. +10 only changes the plus level. Levels are capped at each character's limit, and Catseyes are counted like in the game. Picked characters you don't own are added too.</p>
           <p class="hint" style="margin-top:12px">Rarity groups add only characters that are obtainable in your game version. Removing a character also resets its level and forms.</p>
         </div>
       </details>
@@ -596,7 +616,8 @@
   }
 
   // ---- characters: search by ID or name, add/remove, rarity groups ----
-  const catPick = { add: new Map(), remove: new Map() };   // id -> name
+  const catPick = { add: new Map(), remove: new Map(), level: new Map() };   // id -> name
+  let levelTarget = "all";
   const catLists = {};                                     // region -> catalog
   let catalog = null;
   const rarityBtns = [...document.querySelectorAll("#rarities button")];
@@ -673,7 +694,14 @@
       rmB.setAttribute("aria-pressed", String(catPick.remove.has(id)));
       addB.addEventListener("click", () => toggleCat("add", id, name));
       rmB.addEventListener("click", () => toggleCat("remove", id, name));
-      row.append(cid, nm, addB, rmB);
+      const lvB = document.createElement("button"); lvB.type = "button"; lvB.className = "mini-btn lv"; lvB.textContent = "Lv";
+      lvB.setAttribute("aria-pressed", String(catPick.level.has(id)));
+      lvB.addEventListener("click", () => {
+        if (catPick.level.has(id)) catPick.level.delete(id); else catPick.level.set(id, name);
+        if (catPick.level.size) setLevelTarget("picked");
+        renderCatChips(); renderCatResults();
+      });
+      row.append(cid, nm, addB, rmB, lvB);
       box.appendChild(row);
     }
     if (found.length > 50) {
@@ -691,13 +719,13 @@
     renderCatChips(); renderCatResults();
   }
   function renderCatChips() {
-    for (const [list, boxId] of [["add", "addChips"], ["remove", "removeChips"]]) {
+    for (const [list, boxId] of [["add", "addChips"], ["remove", "removeChips"], ["level", "levelChips"]]) {
       const box = $(boxId); box.innerHTML = "";
       if (!catPick[list].size) {
         const e = document.createElement("span"); e.className = "empty"; e.textContent = catText.none; box.appendChild(e);
       }
       for (const [id, name] of [...catPick[list]].sort((a, b) => a[0] - b[0])) {
-        const chip = document.createElement("span"); chip.className = "chip" + (list === "remove" ? " rm" : "");
+        const chip = document.createElement("span"); chip.className = "chip" + (list === "remove" ? " rm" : list === "level" ? " lv" : "");
         const t = document.createElement("span"); t.textContent = `#${id} ${name || ""}`.trim();
         const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "×");
         x.addEventListener("click", () => { catPick[list].delete(id); renderCatChips(); renderCatResults(); });
@@ -710,8 +738,18 @@
     b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); updateCatBadge();
   }));
   const selectedRarities = () => rarityBtns.filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.rarity);
+  const levelBtns = [...document.querySelectorAll("#levelTarget button")];
+  function setLevelTarget(t) {
+    levelTarget = t;
+    levelBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === t)));
+    $("levelPickedBox").classList.toggle("hidden", t !== "picked");
+    updateCatBadge();
+  }
+  levelBtns.forEach(b => b.addEventListener("click", () => setLevelTarget(b.dataset.target)));
+  $("levelInput").addEventListener("input", () => updateCatBadge());
+  $("levelInput").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
   function updateCatBadge() {
-    const n = catPick.add.size + catPick.remove.size + selectedRarities().length;
+    const n = catPick.add.size + catPick.remove.size + selectedRarities().length + ($("levelInput").value.trim() ? 1 : 0);
     $("catBadge").textContent = catText.selected.replace("{n}", n);
     $("catBadge").classList.toggle("hidden", n === 0);
   }
@@ -788,7 +826,7 @@
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
     $("mapCrowns").value = "0";
-    catPick.add.clear(); catPick.remove.clear(); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
+    catPick.add.clear(); catPick.remove.clear(); catPick.level.clear(); $("levelInput").value = ""; setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("catSearch").value = ""; renderCatChips(); renderCatResults();
     updateStageBadge();
   });
@@ -847,6 +885,15 @@
     if (catPick.add.size) { fd.append("add_cats", [...catPick.add.keys()].join(",")); anyEdit = true; }
     if (catPick.remove.size) { fd.append("remove_cats", [...catPick.remove.keys()].join(",")); anyEdit = true; }
     if (selectedRarities().length) { fd.append("add_rarities", selectedRarities().join(",")); anyEdit = true; }
+    const level = $("levelInput").value.trim();
+    if (levelTarget === "picked" && catPick.level.size && !level) return showError('Type a level for the characters to level up.');
+    if (level) {
+      if (!/^\s*((\d+|max|최대)\s*)?(\+\s*(\d+|max|최대)?\s*)?$/i.test(level) || level === "+") return showError('Type the level like 50+10, 30, +20 or max.');
+      if (levelTarget === "picked" && !catPick.level.size) return showError('Pick characters to level up with the Lv button, or choose All owned.');
+      fd.append("upgrade_level", level); fd.append("upgrade_target", levelTarget);
+      if (levelTarget === "picked") fd.append("upgrade_ids", [...catPick.level.keys()].join(","));
+      anyEdit = true;
+    }
     const chapters = selectedChapters(), treasure = $("treasureLevel").value;
     const storyEdit = form.clear_story.checked || treasure !== "";
     if (storyEdit && !chapters.length) return showError('Choose at least one chapter for the story stage edits.');
