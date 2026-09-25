@@ -115,6 +115,26 @@ def game_data_lock(data_dir: str):
                 fcntl.flock(fh, fcntl.LOCK_UN)
 
 
+def reads_back_exactly(save: core.SaveFile, original: bytes) -> bool:
+    """True if BCSFE writes the save back byte-for-byte as it came in.
+
+    BCSFE's own tests require this for every save it supports. A mismatch means
+    the save uses a newer format than this BCSFE version understands (new game
+    versions sometimes add fields mid-save), so editing it could corrupt it.
+    """
+    try:
+        return save.to_data().to_bytes() == original
+    except Exception:
+        traceback.print_exc()
+        return False
+
+
+def attach_backup(result: dict[str, Any], path: str) -> None:
+    if os.path.exists(path):
+        with open(path, "rb") as fh:
+            result["original_b64"] = base64.b64encode(fh.read()).decode()
+
+
 def snapshot(save: core.SaveFile) -> dict[str, int]:
     out: dict[str, int] = {}
     for key, (attr, _, _) in NUMERIC_FIELDS.items():
@@ -227,26 +247,40 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
 
     # ---- load the save ----------------------------------------------------
     if job["mode"] == "codes":
+        backup = os.path.join(job_dir, "original_SAVE_DATA")
         if cc is None:
             return {"ok": False, "error": "A country code is required."}
-        handler, req = core.ServerHandler.from_codes(
-            job["transfer_code"].strip(),
-            job["confirmation_code"].strip(),
-            cc,
-            core.GameVersion(120200),
-            print=False,
-            save_backup=True,
-        )
+        try:
+            handler, req = core.ServerHandler.from_codes(
+                job["transfer_code"].strip(),
+                job["confirmation_code"].strip(),
+                cc,
+                core.GameVersion(120200),
+                print=False,
+                save_backup=True,
+            )
+        except Exception:
+            # The save may already be downloaded (and the code used up) when
+            # parsing fails, so always hand back the backup if there is one.
+            traceback.print_exc()
+            if not os.path.exists(backup):
+                raise
+            out = {"ok": False, "error": (
+                "Your save was downloaded, but the editor couldn't read it — it may be from a newer game "
+                "version than the editor supports. Your transfer code has now been used, so download "
+                "the original backup below and keep it safe."
+            )}
+            attach_backup(out, backup)
+            return out
         if handler is None:
             if req is None:
                 return {"ok": False, "error": "Couldn't reach the game servers. Try again later."}
             hint = " (JP and TW codes are easy to mix up — check the country.)" if job["cc"] in ("jp", "tw") else ""
             return {"ok": False, "error": "Invalid transfer code, confirmation code or country." + hint}
         save = handler.save_file
-        backup = os.path.join(job_dir, "original_SAVE_DATA")
-        if os.path.exists(backup):
-            with open(backup, "rb") as fh:
-                result["original_b64"] = base64.b64encode(fh.read()).decode()
+        attach_backup(result, backup)
+        with open(backup, "rb") as fh:
+            original = fh.read()
     else:
         raw = core.Data(base64.b64decode(job["file_b64"]))
         try:
@@ -255,10 +289,42 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
             return {"ok": False, "error": "Couldn't detect the save's country. Choose your game's country and try again."}
         except Exception as e:
             return {"ok": False, "error": f"Couldn't read that save file: {e}"}
+        original = raw.to_bytes()
 
     result["country"] = save.cc.get_code()
     result["game_version"] = save.game_version.to_string()
     result["before"] = snapshot(save)
+
+    # ---- make sure this BCSFE version fully understands the save ------------
+    if not reads_back_exactly(save, original):
+        version = result["game_version"]
+        print(f"save does not round-trip (game version {version})", file=sys.stderr)
+        if job["mode"] != "codes":
+            return {"ok": False, "error": (
+                f"This save is from game version {version}, which the editor can't read correctly yet. "
+                "Nothing was changed."
+            )}
+        # The transfer code is already used up, so re-upload the untouched
+        # original to give the player working codes again.
+        save.to_data = lambda: core.Data(original)
+        codes = core.ServerHandler(save, print=False).get_codes()
+        result["after"] = result["before"]
+        result["done"], result["failed"] = [], []
+        if codes is None:
+            result["error"] = (
+                "Your save was downloaded, but the editor couldn't read it — it may be from a newer game "
+                "version than the editor supports. Your transfer code has now been used, so download "
+                "the original backup below and keep it safe."
+            )
+            return result
+        result["transfer_code"], result["confirmation_code"] = codes
+        result["error"] = (
+            f"This save is from game version {version}, which the editor can't read correctly yet, "
+            "so nothing was edited. Your save was uploaded again unchanged — enter the new codes "
+            "below to get it back in the game."
+        )
+        result["ok"] = True
+        return result
 
     # ---- edit ---------------------------------------------------------------
     done, failed = apply_edits(save, job.get("edits") or {}, data_dir)

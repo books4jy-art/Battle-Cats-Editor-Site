@@ -614,7 +614,7 @@
     ["res-codes", "res-changes", "res-done", "res-failed", "res-downloads", "dlEdited", "dlOriginal"]
       .forEach(id => $(id).classList.add("hidden"));
 
-    if (res.error && !res.ok && !res.before) {
+    if (res.error && !res.ok && !res.before && !res.original_b64) {
       box.classList.remove("show");
       showError(res.error);
       return;
