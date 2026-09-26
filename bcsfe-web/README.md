@@ -19,7 +19,9 @@ crowns.
 The collapsible **Characters** section adds or removes individual characters (search by ID, ID range or
 name, using the names in your region's game data) and adds whole rarities (obtainable characters only).
 Its **Level up** box sets levels like `50+10`, `30`, `+20` or `max` for all owned characters or for
-characters picked with the **Lv** button, capped at each character's limit. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
+characters picked with the **Lv** button, capped at each character's limit.
+The collapsible **Talent orbs** section sets how many of each orb type you have, for all orb types or
+by grade / trait / effect (only orb types that exist in your game version). There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 
