@@ -44,6 +44,13 @@ remove it with ×. The bar pinned to the bottom has the edit button, **Clear edi
 applied (if the save was already downloaded, it's uploaded again unchanged so you get working codes back).
 
 
+## Password
+
+This site is password protected. The password is different for every protected site and changes every day at
+6:00 PM (Korea time); get it from the password maker (Battle-Cats-Editor-Sites-Password-Maker).
+Set this service's `SITE_KEY` environment variable in Render to the key the password maker shows for it
+(Site keys section). Until `SITE_KEY` is set, the site stays locked.
+
 ## Run it on your computer
 
 You need Python 3.9 or newer (<https://www.python.org/downloads/>). On Windows, tick
