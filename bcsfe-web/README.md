@@ -10,7 +10,7 @@ save file editor by fieryhenry. Styled to match Sky Mesh Explorer.
   the game servers in this mode. Leave the edits empty to just see what's in the save.
 
 Edits: Cat Food, XP, NP, Leadership, Cat Tickets, Rare / Platinum / Legend Tickets, Platinum Shards,
-unlock all obtainable cats, true-form unlocked cats, and max battle items / Catseyes / Catamins /
+and max battle items / Catseyes / Catamins /
 treasure chests, clear main story chapters (Empire of Cats, Into the Future,
 Cats of the Cosmos) and set their treasures (none / inferior / normal / superior).
 The collapsible **Stages** section can also clear every map of Stories of Legend, Uncanny Legends,
