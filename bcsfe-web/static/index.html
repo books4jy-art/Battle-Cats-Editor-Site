@@ -350,12 +350,19 @@
 
   footer { padding: 0 24px 32px; text-align: center; }
   .hidden { display: none !important; }
+  .disclaimer { display: flex; gap: 8px; margin: 12px 0 0; padding: 9px 11px; border: 1px solid rgba(251,191,36,.28); border-radius: 8px;
+                background: rgba(251,191,36,.06); font-size: 11px; line-height: 1.55; color: rgba(253,230,138,.9); }
+  .disclaimer::before { content: "!"; flex: none; width: 16px; height: 16px; border-radius: 50%; background: rgba(251,191,36,.85); color: #0b0d12;
+                        font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; margin-top: 1px; }
+  .switch-row .name .name-stack { display: block; min-width: 0; }
+  .set-row .name small.warn, .switch-row .name small.warn { display: block; font-size: 10px; margin-top: 1px; color: rgba(251,191,36,.85); }
 
   /* option groups + jump bar */
   .panel-head { position: sticky; top: 0; z-index: 6; margin: -24px -24px 16px; padding: 16px 24px 12px;
                 background: rgba(13,15,21,.96); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
                 border-radius: 16px 16px 0 0; border-bottom: 1px solid var(--w-05); }
   .panel-head .panel-tools { margin-bottom: 10px; }
+  main > *, .panel-head, .group-jump { min-width: 0; }   /* keep the scrolling jump bar from widening the page */
   .group-jump { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
                 -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
   .group-jump::-webkit-scrollbar { display: none; }
@@ -637,6 +644,7 @@
               <div class="hidden" id="medalPicks" style="margin-top:18px"></div>
               <p class="hint" id="medalStatus" style="margin-top:12px"></p>
               <p class="hint" id="medalHint" style="margin-top:8px"></p>
+              <p class="disclaimer">Labyrinth medals only show up in the game while a Labyrinth event is running.</p>
             </div>
           </details>
         </div>
@@ -929,6 +937,7 @@
               </select>
             </div>
             <p class="hint" style="margin-top:12px">Clears every map your game version has, up to the chosen number of crowns. Existing clear counts are kept.</p>
+            <p class="disclaimer">Event and collab stages, and limited stages (gauntlets, Behemoth Culling, Enigma, towers, Legend Quest, Catamin stages, Catclaw Championships), only show up in the game while their event is running. The clears are saved and appear when the event comes back.</p>
             </div>
           </details>
           <details class="fold auto-badge" id="specialFold" data-keywords="aku outbreaks zombie filibuster challenge dojo score itf 악마 좀비 필리버스터 챌린지 도장 점수">
@@ -972,7 +981,7 @@
                 <input class="input" id="f-playtime_hours" name="playtime_hours" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
                 
               </div>
-              <div class="set-row"><label class="name" for="f-rank_rewards">User rank rewards</label>
+              <div class="set-row"><label class="name" for="f-rank_rewards">User rank rewards<small class="warn">Only marks rewards your current user rank has reached.</small></label>
                 <select class="input" id="f-rank_rewards" name="rank_rewards" data-send>
                   <option value="">Don't change</option>
                   <option value="claim">Mark earned ones claimed</option>
@@ -1001,14 +1010,14 @@
                   <option value="remove">Remove all</option>
                 </select>
               </div>
-              <div class="set-row"><label class="name" for="f-gold_pass">Gold pass<small>higher ban risk</small></label>
+              <div class="set-row"><label class="name" for="f-gold_pass">Gold pass<small>higher ban risk</small><small class="warn">The server may take it back.</small></label>
                 <select class="input" id="f-gold_pass" name="gold_pass" data-send>
                   <option value="">Don't change</option>
                   <option value="give">Give 30 days</option>
                   <option value="remove">Remove</option>
                 </select>
               </div>
-              <label class="switch-row"><span class="name">Make the restart pack available</span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name"><span class="name-stack">Make the restart pack available<small class="warn">Only shows up if your account qualifies for the pack.</small></span></span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
               <label class="switch-row"><span class="name">Reset Wildcat Slots & Cat Scratcher</span><span class="switch"><input type="checkbox" name="reset_gambling" data-send /><span class="track"></span></span></label>
               <label class="switch-row"><span class="name">Reset Golden Cat CPU uses</span><span class="switch"><input type="checkbox" name="reset_golden_cpu" data-send /><span class="track"></span></span></label>
               </div>
