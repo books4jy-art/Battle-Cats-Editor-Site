@@ -74,6 +74,12 @@ takes about a minute to load.
 
 If you named the repository something else, change `Battle-Cats-Editor-Site` in the link to match.
 
+## Automatic updates
+
+When the game updates, BCSFE (which reads the saves) has to be updated too. `.github/workflows/update-bcsfe.yml` checks for a new
+BCSFE every day, tests the site with it, and if the test passes commits it to `main`, so Render redeploys the site. If the test
+fails the site stays as it is and a GitHub issue is opened. You can also run it right away from the **Actions** tab (**Run workflow**).
+
 ## How it works
 
 - `static/index.html`: the whole page (HTML, CSS and JS in one file, no build step).
