@@ -52,7 +52,7 @@ NUMERIC = [
     "platinum_tickets", "legend_tickets", "platinum_shards",
 ]
 TOGGLES = [
-    "unlock_cats", "true_form_cats", "max_battle_items", "max_catseyes",
+    "max_battle_items", "max_catseyes",
     "max_catamins", "max_treasure_chests",
 ]
 I32_MAX = 2_147_483_647
