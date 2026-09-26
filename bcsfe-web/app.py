@@ -49,7 +49,7 @@ WORKER = str(HERE / "worker.py")
 COUNTRIES = {"en", "jp", "kr", "tw"}
 NUMERIC = [
     "catfood", "xp", "np", "leadership", "normal_tickets", "rare_tickets",
-    "platinum_tickets", "legend_tickets", "platinum_shards", "hundred_million_ticket",
+    "platinum_tickets", "legend_tickets", "platinum_shards",
 ]
 TOGGLES = [
     "unlock_cats", "true_form_cats", "max_battle_items", "max_catseyes",
