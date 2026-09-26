@@ -19,6 +19,7 @@ TEXT: dict[str, dict[str, str]] = {
     "en": {
         "forms": "Forms & talents",
         "true_evolve": "True form for {n} characters",
+        "levels_raised": " (levels raised to what the form needs for {n})",
         "true_force": "True form forced for {n} characters",
         "true_remove": "True form removed from {n} characters",
         "fourth_evolve": "4th form for {n} characters",
@@ -81,6 +82,7 @@ TEXT: dict[str, dict[str, str]] = {
     "ko": {
         "forms": "형태 · 본능",
         "true_evolve": "캐릭터 {n}개 제3형태 진화",
+        "levels_raised": " (진화에 필요한 레벨로 {n}개 레벨업)",
         "true_force": "캐릭터 {n}개 제3형태 강제 진화",
         "true_remove": "캐릭터 {n}개 제3형태 해제",
         "fourth_evolve": "캐릭터 {n}개 제4형태 진화",
@@ -366,11 +368,15 @@ def _forms(core: Any, save: Any, spec: dict[str, Any], skip: list[int]) -> list[
         if how == "remove":
             for cat in chosen:
                 (cat.remove_true_form if kind == "true" else cat.remove_fourth_form)()
-        elif kind == "true":
+            return t(f"{kind}_{how}", n=len(chosen))
+        before = {cat.id: (cat.unlocked_forms, cat.fourth_form) for cat in chosen}
+        if kind == "true":
             save.cats.true_form_cats(save, chosen, how == "force", set_forms)
         else:
             save.cats.fourth_form_cats(save, chosen, how == "force", set_forms)
-        return t(f"{kind}_{how}", n=len(chosen))
+        evolved = [cat for cat in chosen if (cat.unlocked_forms, cat.fourth_form) != before[cat.id]]
+        raised = _raise_to_form_level(core, save, evolved)
+        return t(f"{kind}_{how}", n=len(chosen)) + (t("levels_raised", n=raised) if raised else "")
 
     for kind in ("true", "fourth"):
         if spec.get(kind):
@@ -411,6 +417,35 @@ def _forms(core: Any, save: Any, spec: dict[str, Any], skip: list[int]) -> list[
     if spec.get("guide"):
         steps.append((t(f"guide_{spec['guide']}", n="").strip(), guide))
     return steps
+
+
+def _raise_to_form_level(core: Any, save: Any, cats: list[Any]) -> int:
+    """The game glitches when a character has a form its level couldn't have unlocked, so
+    raise each newly evolved character to the total (base + plus) level its forms need,
+    never lowering it.
+    Needs come from unitbuy: 2nd form, true form (or the level-30 true form of the
+    starter cats) and ultra form; 30 / 60 when the game data has none (forced forms)."""
+    if not cats:
+        return 0
+    unit_buy = save.cats.read_unitbuy(save)
+    raised = 0
+    for cat in cats:
+        info = unit_buy.get_unit_buy(cat.id) if unit_buy is not None else None
+        second = info.second_form_unlock_level if info is not None and info.second_form_unlock_level > 0 else 10
+        true = next((v for v in ((info.evolve_level_tf, info.force_true_form_level) if info is not None else ()) if v > 0), 30)
+        need = max(second, true)
+        if cat.fourth_form:  # only characters that really got the ultra form
+            need = max(need, info.evolve_level_ff if info is not None and info.evolve_level_ff > 0 else 60)
+        if cat.upgrade.get_base() + cat.upgrade.plus >= need:  # the game counts base + plus levels
+            continue
+        power_up = core.PowerUpHelper(cat, save)
+        if cat.upgrade.get_base() < need:
+            power_up.upgrade_by(need - cat.upgrade.get_base())
+        short = need - cat.upgrade.get_base() - cat.upgrade.plus
+        if short > 0:  # e.g. the starter cats stop at base 20 and reach 30 with plus levels
+            cat.upgrade.plus = min(cat.upgrade.plus + short, power_up.get_max_possible_plus())
+        raised += 1
+    return raised
 
 
 def _skills(core: Any, save: Any, spec: dict[str, Any]) -> str:
