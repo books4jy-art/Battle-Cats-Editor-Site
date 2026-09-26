@@ -167,6 +167,11 @@
   .mini-btn.lv[aria-pressed="true"] { color: #fde68a; border-color: rgba(253,230,138,.6); background: rgba(253,230,138,.08); }
   .mini-btn.lv:hover { color: #fde68a; border-color: rgba(253,230,138,.5); }
   .chip.lv { border-color: rgba(253,230,138,.4); color: #fde68a; background: rgba(253,230,138,.06); }
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-grid button { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--w-15); background: transparent;
+                      font-size: 11px; color: var(--w-60); cursor: pointer; transition: all .15s; }
+  .chip-grid button:hover { border-color: var(--w-30); color: var(--w-80); }
+  .chip-grid button[aria-pressed="true"] { border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); color: var(--sky-300); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 3px 4px 3px 8px; border-radius: 999px; font-size: 11px;
           border: 1px solid rgba(56,189,248,.4); color: var(--sky-300); background: rgba(56,189,248,.06); }
@@ -480,6 +485,31 @@
         </div>
       </details>
 
+      <details class="fold" id="orbFold">
+        <summary><p class="section-title">Talent orbs</p><span class="badge hidden" id="orbBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="orbCount">Amount of each</label>
+            <input class="input" id="orbCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" id="orbMax">Max</button>
+          </div>
+          <div class="seg" id="orbMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All orbs</button>
+            <button type="button" data-mode="filter" aria-pressed="false">By category</button>
+          </div>
+          <div id="orbFilters" class="hidden" style="margin-top:18px">
+            <p class="sub-title">Grade</p>
+            <div class="chip-grid" id="orbGrades"></div>
+            <p class="sub-title">Trait</p>
+            <div class="chip-grid" id="orbTraits"></div>
+            <p class="sub-title">Effect</p>
+            <div class="chip-grid" id="orbEffects"></div>
+          </div>
+          <p class="hint" id="orbStatus" style="margin-top:12px"></p>
+          <p class="hint" style="margin-top:8px">Sets how many of each chosen orb type you have (0 removes them). In a category, pick any number of buttons; an orb must match every category you pick from. Leave a category empty to allow any.</p>
+        </div>
+      </details>
+
       <div>
         <p class="section-title">Max out</p>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-package"/></svg> Battle items</span><span class="switch"><input type="checkbox" name="max_battle_items" /><span class="track"></span></span></label>
@@ -584,6 +614,7 @@
     { key: "platinum_shards",  label: "Platinum Shards",  max: 90 },
   ];
   const LABELS = Object.fromEntries(NUMBERS.map(n => [n.key, n.label]));
+  LABELS.talent_orbs = 'Talent orbs';
   LABELS.story_cleared = 'Story stages cleared';
   LABELS.story_treasures = 'Story treasures';
   LABELS.cats_unlocked = "Cats unlocked";
@@ -755,6 +786,69 @@
   }
   renderCatChips();
 
+  // ---- talent orbs: amount for all orbs or by grade / trait / effect ----
+  const orbText = { loading: 'Loading the orb list…', failed: "Couldn't load the orb list. Try again in a moment.", match: '{n} orb types match',
+                    matchOne: '1 orb type matches', matchAll: 'All {n} orb types', noTrait: 'No trait', selected: '{n} set' };
+  const orbLists = {};
+  let orbData = null, orbMode = "all";
+  const orbPicked = () => ({
+    grades: [...document.querySelectorAll("#orbGrades button[aria-pressed=true]")].map(b => +b.dataset.id),
+    traits: [...document.querySelectorAll("#orbTraits button[aria-pressed=true]")].map(b => +b.dataset.id),
+    effects: [...document.querySelectorAll("#orbEffects button[aria-pressed=true]")].map(b => +b.dataset.id),
+  });
+  function orbButtons(boxId, items) {
+    const box = $(boxId); const keep = new Set([...box.querySelectorAll("button[aria-pressed=true]")].map(b => b.dataset.id));
+    box.innerHTML = "";
+    for (const [id, name] of items) {
+      const b = document.createElement("button"); b.type = "button"; b.dataset.id = id; b.textContent = name;
+      b.setAttribute("aria-pressed", String(keep.has(String(id))));
+      b.addEventListener("click", () => { b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); updateOrbStatus(); });
+      box.appendChild(b);
+    }
+  }
+  async function loadOrbs() {
+    const cc = catRegion();
+    if (!orbLists[cc]) {
+      $("orbStatus").textContent = orbText.loading;
+      try {
+        const r = await fetch(`/api/orbs?cc=${cc}`); const data = await r.json();
+        if (!data.ok) throw new Error(data.error);
+        orbLists[cc] = data;
+      } catch { $("orbStatus").textContent = orbText.failed; return; }
+    }
+    if (cc !== catRegion()) return;
+    orbData = orbLists[cc];
+    orbButtons("orbGrades", orbData.grades);
+    orbButtons("orbTraits", [...orbData.traits, [-1, orbText.noTrait]]);
+    orbButtons("orbEffects", orbData.effects);
+    updateOrbStatus();
+  }
+  function orbMatches() {
+    if (!orbData) return null;
+    if (orbMode === "all") return orbData.orbs.length;
+    const p = orbPicked();
+    if (!p.grades.length && !p.traits.length && !p.effects.length) return 0;
+    return orbData.orbs.filter(([, g, t, e]) => (!p.grades.length || p.grades.includes(g))
+      && (!p.traits.length || p.traits.includes(t === null ? -1 : t)) && (!p.effects.length || p.effects.includes(e))).length;
+  }
+  function updateOrbStatus() {
+    const n = orbMatches();
+    if (n !== null) $("orbStatus").textContent = (orbMode === "all" ? orbText.matchAll : n === 1 ? orbText.matchOne : orbText.match).replace("{n}", n);
+    const set = $("orbCount").value.trim() !== "";
+    $("orbBadge").textContent = orbText.selected.replace("{n}", set ? 1 : 0);
+    $("orbBadge").classList.toggle("hidden", !set);
+  }
+  function setOrbMode(m) {
+    orbMode = m;
+    document.querySelectorAll("#orbMode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    $("orbFilters").classList.toggle("hidden", m !== "filter");
+    updateOrbStatus();
+  }
+  document.querySelectorAll("#orbMode button").forEach(b => b.addEventListener("click", () => setOrbMode(b.dataset.mode)));
+  $("orbFold").addEventListener("toggle", () => { if ($("orbFold").open) loadOrbs(); });
+  $("orbMax").addEventListener("click", () => { $("orbCount").value = String((orbData && orbData.max) || 998); updateOrbStatus(); });
+  $("orbCount").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^\d]/g, "").slice(0, 3); updateOrbStatus(); });
+
   // ---- story chapters ----
   const chapterBtns = [...document.querySelectorAll("#chapters button")];
   chapterBtns.forEach(b => b.addEventListener("click", () =>
@@ -795,6 +889,7 @@
   }));
   function setCountry(cc) {
     country = cc;
+    if ($("orbFold").open) loadOrbs();
     if ($("catFold").open) loadCatalog();
     document.querySelectorAll("#country button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cc === cc)));
   }
@@ -826,6 +921,8 @@
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
     $("mapCrowns").value = "0";
+    $("orbCount").value = ""; document.querySelectorAll(".chip-grid button").forEach(b => b.setAttribute("aria-pressed", "false"));
+    setOrbMode("all");
     catPick.add.clear(); catPick.remove.clear(); catPick.level.clear(); $("levelInput").value = ""; setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("catSearch").value = ""; renderCatChips(); renderCatResults();
     updateStageBadge();
@@ -892,6 +989,16 @@
       if (levelTarget === "picked" && !catPick.level.size) return showError('Pick characters to level up with the Lv button, or choose All owned.');
       fd.append("upgrade_level", level); fd.append("upgrade_target", levelTarget);
       if (levelTarget === "picked") fd.append("upgrade_ids", [...catPick.level.keys()].join(","));
+      anyEdit = true;
+    }
+    const orbCount = $("orbCount").value.trim();
+    if (orbCount) {
+      fd.append("orb_mode", orbMode); fd.append("orb_count", orbCount);
+      if (orbMode === "filter") {
+        const p = orbPicked();
+        if (!p.grades.length && !p.traits.length && !p.effects.length) return showError('Pick at least one grade, trait or effect, or choose All orbs.');
+        fd.append("orb_grades", p.grades.join(",")); fd.append("orb_traits", p.traits.join(",")); fd.append("orb_effects", p.effects.join(","));
+      }
       anyEdit = true;
     }
     const chapters = selectedChapters(), treasure = $("treasureLevel").value;

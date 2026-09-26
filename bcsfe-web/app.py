@@ -206,6 +206,31 @@ def parse_edits(form) -> dict[str, Any] | str:
     elif form.get("upgrade_ids"):
         return 'Type a level for the characters to level up.'
 
+    # Talent orbs: an amount for all orb types, or for those matching grade/trait/effect filters.
+    orb_mode = form.get("orb_mode") or ""
+    if orb_mode:
+        amount = (form.get("orb_count") or "").strip().replace(",", "")
+        if not amount:
+            return 'Type how many of each orb you want.'
+        if not amount.isdigit() or int(amount) > 998:
+            return 'Orb amount must be a number from 0 to 998.'
+        spec: dict[str, Any] = {"count": int(amount), "all": orb_mode == "all"}
+        if orb_mode == "filter":
+            for key, limit in (("grades", 10), ("effects", 100)):
+                ids = parse_ids(form.get(f"orb_{key}") or "", limit)
+                if ids is None:
+                    return 'Unknown orb category.'
+                spec[key] = ids
+            traits = [t for t in (form.get("orb_traits") or "").split(",") if t]
+            if not all(t == "-1" or (t.isdigit() and int(t) < 100) for t in traits):
+                return 'Unknown orb category.'
+            spec["traits"] = [int(t) for t in traits]
+            if not (spec["grades"] or spec["traits"] or spec["effects"]):
+                return 'Pick at least one grade, trait or effect, or choose All orbs.'
+        elif orb_mode != "all":
+            return 'Unknown orb category.'
+        edits["orbs"] = spec
+
     # Legend/event maps: which groups to clear and how many crowns (0 = all).
     maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab'] if form.get(f"clear_{k}") in ("1", "true", "on")]
     crowns = (form.get("map_crowns") or "0").strip()
@@ -230,21 +255,32 @@ CATALOG_MAX_AGE = 6 * 3600
 @app.get("/api/cats")
 def cats():
     """Character list (id, name, rarity, obtainable) for the search box, cached per region."""
+    return game_data_list("catalog")
+
+
+@app.get("/api/orbs")
+def orbs():
+    """Talent orb types and their grade/trait/effect names, cached per region."""
+    return game_data_list("orbs")
+
+
+def game_data_list(mode: str):
     cc = (request.args.get("cc") or 'en').lower()
     if cc not in COUNTRIES:
         return fail("Unknown country.")
-    cached = catalog_cache.get(cc)
+    key = f"{mode}:{cc}"
+    cached = catalog_cache.get(key)
     if cached and time.time() - cached[0] < CATALOG_MAX_AGE:
         return jsonify(cached[1])
     if not catalog_lock.acquire(timeout=90):
         return fail('The character list is busy. Try again in a moment.', 503)
     try:
-        cached = catalog_cache.get(cc)
+        cached = catalog_cache.get(key)
         if cached and time.time() - cached[0] < CATALOG_MAX_AGE:
             return jsonify(cached[1])
-        result = run_job({"mode": "catalog", "cc": cc})
+        result = run_job({"mode": mode, "cc": cc})
         if result.get("ok"):
-            catalog_cache[cc] = (time.time(), result)
+            catalog_cache[key] = (time.time(), result)
         return jsonify(result), (200 if result.get("ok") else 502)
     finally:
         catalog_lock.release()
