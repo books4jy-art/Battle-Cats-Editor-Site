@@ -6,6 +6,8 @@ services:
     plan: free
     healthCheckPath: /
     envVars:
+      - key: SITE_KEY
+        sync: false
       - key: TRUST_PROXY
         value: "1"
       - key: MAX_CONCURRENT_JOBS
