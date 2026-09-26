@@ -23,6 +23,8 @@ from typing import Any
 
 from flask import Flask, jsonify, request, send_from_directory
 
+import extras
+
 try:
     from dotenv import load_dotenv
 
@@ -46,7 +48,7 @@ WORKER = str(HERE / "worker.py")
 COUNTRIES = {"en", "jp", "kr", "tw"}
 NUMERIC = [
     "catfood", "xp", "np", "leadership", "normal_tickets", "rare_tickets",
-    "platinum_tickets", "legend_tickets", "platinum_shards",
+    "platinum_tickets", "legend_tickets", "platinum_shards", "hundred_million_ticket",
 ]
 TOGGLES = [
     "unlock_cats", "true_form_cats", "max_battle_items", "max_catseyes",
@@ -207,7 +209,8 @@ def parse_edits(form) -> dict[str, Any] | str:
         return 'Type a level for the characters to level up.'
 
     # Catfruit/seeds, behemoth stones/gems, catseyes: "index:amount,index:amount".
-    for group, limit in (("fruit", 998), ("stone", 998), ("eye", 9999), ("battle", 9999), ("drink", 9999), ("chest", 9999)):
+    for group, limit in (("fruit", 998), ("stone", 998), ("eye", 9999), ("battle", 9999), ("drink", 9999), ("chest", 9999),
+                         ("material", 9999), ("medal", 9999)):
         raw = (form.get(f"items_{group}") or "").replace(" ", "")
         if not raw:
             continue
@@ -245,13 +248,19 @@ def parse_edits(form) -> dict[str, Any] | str:
         edits["orbs"] = spec
 
     # Legend/event maps: which groups to clear and how many crowns (0 = all).
-    maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab'] if form.get(f"clear_{k}") in ("1", "true", "on")]
+    maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab', 'gauntlet', 'collab_gauntlet', 'behemoth', 'enigma', 'tower', 'legend_quest', 'catamin_stage', 'catclaw'] if form.get(f"clear_{k}") in ("1", "true", "on")]
     crowns = (form.get("map_crowns") or "0").strip()
     if crowns not in ("0", "1", "2", "3", "4"):
         return 'Unknown crown count.'
     if maps:
         edits["clear_maps"] = maps
         edits["map_crowns"] = int(crowns)
+
+    # Forms & talents, special skills, Ototo, Gamatoto, endless items, more stages, progress, fixes.
+    extra = extras.parse(form)
+    if isinstance(extra, str):
+        return extra
+    edits.update(extra)
     return edits
 
 
@@ -275,6 +284,12 @@ def cats():
 def items():
     """Catfruit/seed, behemoth stone/gem and catseye names, cached per region."""
     return game_data_list("items")
+
+
+@app.get("/api/extras")
+def extras_list():
+    """Names and limits for special skills, Gamatoto, the cat shrine and Ototo, cached per region."""
+    return game_data_list("extras")
 
 
 @app.get("/api/orbs")
