@@ -206,6 +206,19 @@ def parse_edits(form) -> dict[str, Any] | str:
     elif form.get("upgrade_ids"):
         return 'Type a level for the characters to level up.'
 
+    # Catfruit/seeds, behemoth stones/gems, catseyes: "index:amount,index:amount".
+    for group, limit in (("fruit", 998), ("stone", 998), ("eye", 9999)):
+        raw = (form.get(f"items_{group}") or "").replace(" ", "")
+        if not raw:
+            continue
+        values: dict[int, int] = {}
+        for pair in raw.split(","):
+            index, _, amount = pair.partition(":")
+            if not (index.isdigit() and amount.isdigit()) or int(index) >= 500:
+                return 'Item amounts must be whole numbers.'
+            values[int(index)] = min(int(amount), limit)
+        edits[f"items_{group}"] = values
+
     # Talent orbs: an amount for all orb types, or for those matching grade/trait/effect filters.
     orb_mode = form.get("orb_mode") or ""
     if orb_mode:
@@ -256,6 +269,12 @@ CATALOG_MAX_AGE = 6 * 3600
 def cats():
     """Character list (id, name, rarity, obtainable) for the search box, cached per region."""
     return game_data_list("catalog")
+
+
+@app.get("/api/items")
+def items():
+    """Catfruit/seed, behemoth stone/gem and catseye names, cached per region."""
+    return game_data_list("items")
 
 
 @app.get("/api/orbs")

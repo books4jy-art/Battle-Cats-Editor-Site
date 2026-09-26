@@ -167,6 +167,8 @@
   .mini-btn.lv[aria-pressed="true"] { color: #fde68a; border-color: rgba(253,230,138,.6); background: rgba(253,230,138,.08); }
   .mini-btn.lv:hover { color: #fde68a; border-color: rgba(253,230,138,.5); }
   .chip.lv { border-color: rgba(253,230,138,.4); color: #fde68a; background: rgba(253,230,138,.06); }
+  .item-list { margin-top: 12px; border-top: 1px solid var(--w-05); padding-top: 10px; }
+  .item-list .num-row .name { font-size: 12px; }
   .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip-grid button { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--w-15); background: transparent;
                       font-size: 11px; color: var(--w-60); cursor: pointer; transition: all .15s; }
@@ -510,6 +512,45 @@
         </div>
       </details>
 
+      <details class="fold item-fold" id="fruitFold" data-group="fruit">
+        <summary><p class="section-title">Catfruit & seeds</p><span class="badge hidden" id="fruitBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="fruitAll">Set all to</label>
+            <input class="input" id="fruitAll" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-apply="fruit">Apply</button>
+          </div>
+          <div class="item-list" id="fruitList"></div>
+          <p class="hint" id="fruitStatus" style="margin-top:10px"></p>
+        </div>
+      </details>
+
+      <details class="fold item-fold" id="stoneFold" data-group="stone">
+        <summary><p class="section-title">Behemoth stones & gems (crystals)</p><span class="badge hidden" id="stoneBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="stoneAll">Set all to</label>
+            <input class="input" id="stoneAll" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-apply="stone">Apply</button>
+          </div>
+          <div class="item-list" id="stoneList"></div>
+          <p class="hint" id="stoneStatus" style="margin-top:10px"></p>
+        </div>
+      </details>
+
+      <details class="fold item-fold" id="eyeFold" data-group="eye">
+        <summary><p class="section-title">Catseyes</p><span class="badge hidden" id="eyeBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="eyeAll">Set all to</label>
+            <input class="input" id="eyeAll" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-apply="eye">Apply</button>
+          </div>
+          <div class="item-list" id="eyeList"></div>
+          <p class="hint" id="eyeStatus" style="margin-top:10px"></p>
+        </div>
+      </details>
+
       <div>
         <p class="section-title">Max out</p>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-package"/></svg> Battle items</span><span class="switch"><input type="checkbox" name="max_battle_items" /><span class="track"></span></span></label>
@@ -614,6 +655,8 @@
     { key: "platinum_shards",  label: "Platinum Shards",  max: 90 },
   ];
   const LABELS = Object.fromEntries(NUMBERS.map(n => [n.key, n.label]));
+  LABELS.catfruit_total = 'Catfruit, seeds & stones (total)';
+  LABELS.catseyes_total = 'Catseyes (total)';
   LABELS.talent_orbs = 'Talent orbs';
   LABELS.story_cleared = 'Story stages cleared';
   LABELS.story_treasures = 'Story treasures';
@@ -786,6 +829,58 @@
   }
   renderCatChips();
 
+  // ---- catfruit & seeds, behemoth stones & gems, catseyes ----
+  const itemText = { loading: 'Loading item names…', failed: "Couldn't load the item list. Try again in a moment.", hint: 'Leave a box empty to keep that item as it is. Up to {max} each.',
+                     maxBtn: 'Max', selected: '{n} set' };
+  const itemLists = {};
+  let itemData = null;
+  const ITEM_GROUPS = ["fruit", "stone", "eye"];
+  const itemInputs = (g) => [...document.querySelectorAll(`#${g}List input`)];
+  const fmtNum = (v) => v ? Number(v).toLocaleString("en-US") : "";
+  async function loadItems() {
+    const cc = catRegion();
+    if (!itemLists[cc]) {
+      ITEM_GROUPS.forEach(g => $(g + "Status").textContent = itemText.loading);
+      try {
+        const r = await fetch(`/api/items?cc=${cc}`); const data = await r.json();
+        if (!data.ok) throw new Error(data.error);
+        itemLists[cc] = data;
+      } catch { ITEM_GROUPS.forEach(g => $(g + "Status").textContent = itemText.failed); return; }
+    }
+    if (cc !== catRegion() || itemData === itemLists[cc]) return;
+    itemData = itemLists[cc];
+    for (const g of ITEM_GROUPS) {
+      const keep = Object.fromEntries(itemInputs(g).map(i => [i.dataset.index, i.value]));
+      const box = $(g + "List"); box.innerHTML = "";
+      for (const [index, name] of itemData[g]) {
+        const row = document.createElement("div"); row.className = "num-row";
+        const lbl = document.createElement("label"); lbl.className = "name"; lbl.textContent = name; lbl.htmlFor = `item-${g}-${index}`;
+        const inp = document.createElement("input"); inp.className = "input"; inp.id = `item-${g}-${index}`; inp.dataset.index = index;
+        inp.inputMode = "numeric"; inp.placeholder = "—"; inp.autocomplete = "off"; inp.value = keep[index] || "";
+        inp.addEventListener("input", () => { const d = inp.value.replace(/[^\d]/g, ""); inp.value = d ? fmtNum(Math.min(+d, itemData.max[g])) : ""; updateItemBadge(g); });
+        const mx = document.createElement("button"); mx.type = "button"; mx.className = "max-btn"; mx.textContent = itemText.maxBtn;
+        mx.addEventListener("click", () => { inp.value = fmtNum(itemData.max[g]); updateItemBadge(g); });
+        row.append(lbl, inp, mx); box.appendChild(row);
+      }
+      $(g + "Status").textContent = itemText.hint.replace("{max}", fmtNum(itemData.max[g]));
+      updateItemBadge(g);
+    }
+  }
+  function updateItemBadge(g) {
+    const n = itemInputs(g).filter(i => i.value !== "").length;
+    $(g + "Badge").textContent = itemText.selected.replace("{n}", n);
+    $(g + "Badge").classList.toggle("hidden", n === 0);
+  }
+  document.querySelectorAll(".item-fold").forEach(f => f.addEventListener("toggle", () => { if (f.open) loadItems(); }));
+  document.querySelectorAll("[data-apply]").forEach(b => b.addEventListener("click", () => {
+    const g = b.dataset.apply, all = $(g + "All");
+    const d = all.value.replace(/[^\d]/g, "");
+    if (!d || !itemData) return;
+    itemInputs(g).forEach(i => i.value = fmtNum(Math.min(+d, itemData.max[g])));
+    updateItemBadge(g);
+  }));
+  ITEM_GROUPS.forEach(g => $(g + "All").addEventListener("input", (e) => { const d = e.target.value.replace(/[^\d]/g, ""); e.target.value = d ? fmtNum(+d) : ""; }));
+
   // ---- talent orbs: amount for all orbs or by grade / trait / effect ----
   const orbText = { loading: 'Loading the orb list…', failed: "Couldn't load the orb list. Try again in a moment.", match: '{n} orb types match',
                     matchOne: '1 orb type matches', matchAll: 'All {n} orb types', noTrait: 'No trait', selected: '{n} set' };
@@ -889,6 +984,7 @@
   }));
   function setCountry(cc) {
     country = cc;
+    if ([...document.querySelectorAll(".item-fold")].some(f => f.open)) loadItems();
     if ($("orbFold").open) loadOrbs();
     if ($("catFold").open) loadCatalog();
     document.querySelectorAll("#country button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cc === cc)));
@@ -921,6 +1017,7 @@
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
     $("mapCrowns").value = "0";
+    ITEM_GROUPS.forEach(g => { $(g + "All").value = ""; itemInputs(g).forEach(i => i.value = ""); updateItemBadge(g); });
     $("orbCount").value = ""; document.querySelectorAll(".chip-grid button").forEach(b => b.setAttribute("aria-pressed", "false"));
     setOrbMode("all");
     catPick.add.clear(); catPick.remove.clear(); catPick.level.clear(); $("levelInput").value = ""; setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
@@ -990,6 +1087,10 @@
       fd.append("upgrade_level", level); fd.append("upgrade_target", levelTarget);
       if (levelTarget === "picked") fd.append("upgrade_ids", [...catPick.level.keys()].join(","));
       anyEdit = true;
+    }
+    for (const g of ITEM_GROUPS) {
+      const vals = itemInputs(g).filter(i => i.value !== "").map(i => `${i.dataset.index}:${i.value.replace(/[^\d]/g, "")}`);
+      if (vals.length) { fd.append(`items_${g}`, vals.join(",")); anyEdit = true; }
     }
     const orbCount = $("orbCount").value.trim();
     if (orbCount) {
