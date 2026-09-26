@@ -718,6 +718,16 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
     return done, failed
 
 
+# app.py drops CANCEL_FLAG in the job folder to cancel; the worker drops EDITING_MARK once
+# edits start, after which a transfer-code edit can't be cancelled safely.
+CANCEL_FLAG, EDITING_MARK = "cancel", "editing"
+CANCEL_TEXT = {'early': 'Edit cancelled before your save was downloaded. Nothing was changed, and your transfer code still works.', 'file': 'Edit cancelled. Nothing was changed.', 'reuploaded': 'Edit cancelled — nothing was changed. Your save had already been downloaded, which uses up the transfer code, so it was uploaded again unchanged. Enter the new codes below.', 'upload_fail': 'Edit cancelled, but uploading your unchanged save again failed. Your transfer code has been used, so download the original backup below and keep it safe.', 'too_late': 'The cancel came too late — your edits had already been applied, so they were saved.'}
+
+
+def cancel_requested(job: dict[str, Any]) -> bool:
+    return os.path.exists(os.path.join(job["job_dir"], CANCEL_FLAG))
+
+
 def run(job: dict[str, Any]) -> dict[str, Any]:
     data_dir = job["data_dir"]
     job_dir = job["job_dir"]
@@ -742,6 +752,8 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     # ---- load the save ----------------------------------------------------
     if job["mode"] == "codes":
         backup = os.path.join(job_dir, "original_SAVE_DATA")
+        if cancel_requested(job):
+            return {"ok": False, "cancelled": True, "error": CANCEL_TEXT["early"]}
         if cc is None:
             return {"ok": False, "error": "A country code is required."}
         try:
@@ -820,6 +832,24 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
         result["ok"] = True
         return result
 
+    # ---- cancelled before any edit? -----------------------------------------
+    if cancel_requested(job):
+        if job["mode"] != "codes":
+            return {"ok": False, "cancelled": True, "error": CANCEL_TEXT["file"]}
+        # The transfer code is used up, so upload the untouched save again for new codes.
+        save.to_data = lambda: core.Data(original)
+        codes = core.ServerHandler(save, print=False).get_codes()
+        result["after"] = result["before"]
+        result["done"], result["failed"], result["cancelled"] = [], [], True
+        if codes is None:
+            result["error"] = CANCEL_TEXT["upload_fail"]
+            return result
+        result["transfer_code"], result["confirmation_code"] = codes
+        result["notice"] = CANCEL_TEXT["reuploaded"]
+        result["ok"] = True
+        return result
+    open(os.path.join(job_dir, EDITING_MARK), "w").close()
+
     # ---- edit ---------------------------------------------------------------
     done, failed = apply_edits(save, job.get("edits") or {}, data_dir)
     result["done"] = done
@@ -845,6 +875,8 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     else:
         result["edited_b64"] = base64.b64encode(save.to_data().to_bytes()).decode()
 
+    if cancel_requested(job):
+        result["notice"] = CANCEL_TEXT["too_late"]
     result["ok"] = True
     return result
 

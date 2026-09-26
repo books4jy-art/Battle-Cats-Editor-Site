@@ -35,10 +35,13 @@ and **Repair tools** (BCSFE's fix options). **Stages** also clears gauntlets, co
 culling, Enigma stages, towers, Legend Quest, Catamin stages and Catclaw Dojo, and **Battle items** can make
 items endless.
 
-The option list is long, so there's a **search box** above it (e.g. "medal" or "talent" jumps to the right
-section), a **Collapse all** link, and a bar pinned to the bottom of the screen with the edit button, a
-count of the edits you've set, **Clear edits** and a back-to-top button, so you never scroll to the bottom
-to submit.
+The options are sorted into colour-coded groups (Base items, Upgrade items, Character modifiers, Base &
+facilities, Stage modifiers, Account & progress, Bug fixers). A bar at the top of the options jumps to any group and
+shows how many edits each one has, next to a **search box** and a **Collapse all** link. Under the code box,
+**Edits to be saved** shows a one-line summary when collapsed; open it to see every edit in detail, jump to it, or
+remove it with ×. The bar pinned to the bottom has the edit button, **Clear edits**, back-to-top, and a
+**Cancel edit** button while an edit runs. A transfer-code edit can be cancelled until the edits start being
+applied (if the save was already downloaded, it's uploaded again unchanged so you get working codes back).
 
 There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
