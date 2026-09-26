@@ -35,6 +35,7 @@ sys.stdout = sys.stderr
 from importlib import resources  # noqa: E402
 
 import bcsfe  # noqa: E402
+import extras  # noqa: E402
 from bcsfe import core  # noqa: E402
 
 # Numeric fields: (save attribute, max-value key, managed item type or None).
@@ -58,6 +59,7 @@ NUMERIC_FIELDS: dict[str, tuple[str, str, Any]] = {
         core.ManagedItemType.LEGEND_TICKET,
     ),
     "platinum_shards": ("platinum_shards", "platinum_tickets", None),
+    "hundred_million_ticket": ("hundred_million_ticket", "hundred_million_tickets", None),
 }
 
 LABELS = {
@@ -70,6 +72,7 @@ LABELS = {
     "platinum_tickets": "Platinum Tickets",
     "legend_tickets": "Legend Tickets",
     "platinum_shards": "Platinum Shards",
+    "hundred_million_ticket": "100M DL Celebration Ticket",
 }
 
 
@@ -111,8 +114,17 @@ MAP_GROUPS: dict[str, tuple[str, str, int, int | None]] = {
     "zero": ("zero_legends", "ND", 34000, None),
     "event": ("event_stages", "S", 1000, 1),
     "collab": ("event_stages", "C", 2000, 2),
+    "gauntlet": ("gauntlets", "A", 24000, None),
+    "collab_gauntlet": ("collab_gauntlets", "CA", 27000, None),
+    "behemoth": ("behemoth_culling", "Q", 31000, None),
+    "enigma": ("enigma_clears", "H", 25000, None),
+    "tower": ("tower.chapters", "V", 7000, None),
+    "legend_quest": ("legend_quest", "D", 16000, None),
+    "catamin_stage": ("catamin_stages.chapters", "B", 14000, None),
+    "catclaw": ("dojo_chapters", "G", 37000, None),
 }
-MAP_GROUP_NAMES = {'legend': 'Stories of Legend', 'uncanny': 'Uncanny Legends', 'zero': 'Zero Legends', 'event': 'Event stages', 'collab': 'Collab stages'}
+NO_R_PREFIX = {'catclaw'}  # map names without the R prefix
+MAP_GROUP_NAMES = {'legend': 'Stories of Legend', 'uncanny': 'Uncanny Legends', 'zero': 'Zero Legends', 'event': 'Event stages', 'collab': 'Collab stages', 'gauntlet': 'Gauntlets', 'collab_gauntlet': 'Collab gauntlets', 'behemoth': 'Behemoth Culling', 'enigma': 'Enigma stages', 'tower': 'Towers', 'legend_quest': 'Legend Quest', 'catamin_stage': 'Catamin stages', 'catclaw': 'Catclaw Championships'}
 
 
 def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
@@ -125,11 +137,13 @@ def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
     from bcsfe.cli.edits import map as map_edits
 
     attr, code, base, map_type = MAP_GROUPS[key]
-    chapters = getattr(save, attr)
+    chapters = save
+    for part in attr.split("."):
+        chapters = getattr(chapters, part)
     if key == "uncanny":
         chapters = chapters.chapters
     map_option = core.MapOption.from_save(save)
-    names = core.MapNames(save, code, base_index=base, output=False).map_names
+    names = core.MapNames(save, code, base_index=base, output=False, no_r_prefix=key in NO_R_PREFIX).map_names
     if map_option is None or not names:
         raise RuntimeError("couldn't download game data — try again later" if map_option is None else 'no maps for this game version in the game data')
 
@@ -320,7 +334,7 @@ def set_talent_orbs(save: core.SaveFile, spec: dict[str, Any]) -> str:
     return 'Set {n} talent orb type{s} to {count}'.format(n=n, s="" if n == 1 else "s", count=count)
 
 
-ITEM_GROUP_NAMES = {'fruit': 'Catfruit & seeds', 'stone': 'Behemoth stones & gems (crystals)', 'eye': 'Catseyes', 'battle': 'Battle items', 'drink': 'Catamins', 'chest': 'Treasure chests'}
+ITEM_GROUP_NAMES = {'fruit': 'Catfruit & seeds', 'stone': 'Behemoth stones & gems (crystals)', 'eye': 'Catseyes', 'battle': 'Battle items', 'drink': 'Catamins', 'chest': 'Treasure chests', 'material': 'Base materials', 'medal': 'Labyrinth medals'}
 BEHEMOTH_GROUP = 9  # matatabi group of behemoth stones/gems (the "crystals")
 
 
@@ -385,10 +399,14 @@ def item_catalog(cc: core.CountryCode) -> dict[str, Any]:
             "stone": [group('Stones', parts["stones"]), group('Gems', parts["gems"])],
             "battle": [group('Battle items', battle_rows)],
             "drink": [group('Catamins', gatya_rows(6))],
+            "material": [group(ITEM_GROUP_NAMES["material"], gatya_rows(7)[:8]),        # normal materials
+                         group(ITEM_GROUP_NAMES["material"] + " Z", gatya_rows(7)[8:])],  # the Z versions
+            "medal": [group(ITEM_GROUP_NAMES["medal"], gatya_rows(11))],
             "chest": [group('Treasure chests', gatya_rows(12), merge=True)],
             "eye": [group('Catseyes', eye_rows)],
             "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes,
-                    "battle": maxes.battle_items, "drink": maxes.catamins, "chest": maxes.treasure_chests}}
+                    "battle": maxes.battle_items, "drink": maxes.catamins, "chest": maxes.treasure_chests,
+                    "material": maxes.base_materials, "medal": maxes.labyrinth_medals}}
 
 
 def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
@@ -402,6 +420,10 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
         target, cap = save.treasure_chests, maxes.treasure_chests
     elif group == "battle":
         target, cap = save.battle_items.items, maxes.battle_items
+    elif group == "material":
+        target, cap = save.ototo.base_materials.materials, maxes.base_materials
+    elif group == "medal":
+        target, cap = save.labyrinth_medals, maxes.labyrinth_medals
     else:
         target = save.catfruit
         cap = maxes.catfruit_new if save.game_version >= 110400 else maxes.catfruit_old
@@ -410,7 +432,7 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
     for index, value in sorted((int(k), int(v)) for k, v in values.items()):
         if index < len(target):
             amount = max(0, min(int(value), cap))
-            if group == "battle":
+            if group in ("battle", "material"):
                 target[index].amount = amount
             else:
                 target[index] = amount
@@ -638,7 +660,7 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
             edit_cats(save, edits, attempt, done)
 
     # Catfruit & seeds, behemoth stones & gems, catseyes (indexes into the save's lists).
-    for group in ("fruit", "stone", "eye", "battle", "drink", "chest"):
+    for group in ("fruit", "stone", "eye", "battle", "drink", "chest", "material", "medal"):
         if edits.get(f"items_{group}"):
             item_out: dict[str, str] = {}
             before = len(done)
@@ -686,6 +708,13 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
                     save.cats.true_form_cats(save, cats, False, set_forms)
                 attempt("True forms for unlocked cats", f)
 
+    # Forms & talents, special skills, Ototo, Gamatoto, endless items, more stages,
+    # progress and fixes (extras.py); most need game data.
+    if any(edits.get(k) for k in ("forms", "skills", "ototo", "gamatoto", "endless", "more_stages", "progress", "fixes")):
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            extras.apply(core, save, edits, attempt, done)
+
     return done, failed
 
 
@@ -703,10 +732,11 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     cc = core.CountryCode.from_code(job["cc"]) if job.get("cc") else None
     result: dict[str, Any] = {"ok": False}
 
-    if job["mode"] in ("catalog", "orbs", "items"):
+    if job["mode"] in ("catalog", "orbs", "items", "extras"):
         accept_backup_game_data_repo()
         with game_data_lock(data_dir):
-            build = {"catalog": cat_catalog, "orbs": orb_catalog, "items": item_catalog}[job["mode"]]
+            build = {"catalog": cat_catalog, "orbs": orb_catalog, "items": item_catalog,
+                     "extras": lambda c: extras.catalog(core, c)}[job["mode"]]
             return build(cc or core.CountryCode.from_code("en"))
 
     # ---- load the save ----------------------------------------------------

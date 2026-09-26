@@ -24,7 +24,23 @@ The collapsible **Talent orbs** section sets how many of each orb type you have,
 by grade / trait / effect (only orb types that exist in your game version).
 Separate collapsible sections set the amount of each **Catfruit & seed**, **Behemoth stone & gem** (the
 "crystals"), **Catseye**, **Battle item**, **Catamin** and **Treasure chest** type: one amount for all
-types or for the types you pick, like the talent orbs. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
+types or for the types you pick, like the talent orbs. More collapsible sections, each laid out for what it edits:
+**Base materials** and **Labyrinth medals** (amounts, like the orbs); **Forms & talents** (true / 4th form,
+max or remove talents, cat guide, for all owned or Lv-picked characters); **Special skills** (base power-ups,
+with a level like `max+max`); **Ototo & cat cannon** (engineers, max all cannons); **Gamatoto & cat shrine**
+(Gamatoto level, helpers per rarity, shrine level); **Special stages & scores** (Aku realm, outbreaks,
+Filibuster, challenge / dojo / Into the Future timed scores); **Progress & account** (lineup slots, playtime, user
+rank rewards, meow medals, missions, enemy guide, gold pass, restart pack, reset Wildcat Slots / Golden Cat CPU)
+and **Repair tools** (BCSFE's fix options). **Stages** also clears gauntlets, collab gauntlets, Behemoth
+culling, Enigma stages, towers, Legend Quest, Catamin stages and Catclaw Dojo, and **Battle items** can make
+items endless.
+
+The option list is long, so there's a **search box** above it (e.g. "medal" or "talent" jumps to the right
+section), a **Collapse all** link, and a bar pinned to the bottom of the screen with the edit button, a
+count of the edits you've set, **Clear edits** and a back-to-top button, so you never scroll to the bottom
+to submit.
+
+There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 
@@ -60,6 +76,8 @@ If you named the repository something else, change `Battle-Cats-Editor-Site` in 
 - `static/index.html`: the whole page (HTML, CSS and JS in one file, no build step).
 - `app.py`: a small Flask server. `POST /api/edit` checks the input, rate-limits per visitor
   (one edit at a time plus a cooldown), and limits how many edits run at once.
+- `extras.py`: the newer sections (forms, skills, Ototo, Gamatoto, scores, progress, repairs), used by
+  `app.py` to read the form and by `worker.py` to apply them.
 - `worker.py`: runs each edit in its **own process**, calling BCSFE directly
   (`ServerHandler.from_codes` → edit → `ServerHandler.get_codes`). Isolating each edit keeps
   visitors' saves from mixing and stops one crashed edit from taking the site down.

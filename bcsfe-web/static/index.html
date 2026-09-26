@@ -167,6 +167,52 @@
   .mini-btn.lv[aria-pressed="true"] { color: #fde68a; border-color: rgba(253,230,138,.6); background: rgba(253,230,138,.08); }
   .mini-btn.lv:hover { color: #fde68a; border-color: rgba(253,230,138,.5); }
   .chip.lv { border-color: rgba(253,230,138,.4); color: #fde68a; background: rgba(253,230,138,.06); }
+  /* panel toolbar, fixed action bar and the extra section layouts */
+  .stack > details.fold + details.fold { margin-top: -18px; }
+  details.fold > summary { padding-top: 11px; padding-bottom: 11px; }
+  .panel-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .tool-search { flex: 1; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid var(--w-15); border-radius: 8px; color: var(--w-40); }
+  .tool-search:focus-within { border-color: rgba(56,189,248,.6); box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
+  .tool-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-size: 12px; }
+  .panel-tools .link-btn { margin: 0; white-space: nowrap; }
+  body { padding-bottom: 76px; }
+  .action-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; border-top: 1px solid var(--w-10);
+                background: rgba(11,13,18,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .action-inner { max-width: 1200px; margin: 0 auto; padding: 10px 24px calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; }
+  @media (min-width: 768px) { .action-inner { padding-left: 40px; padding-right: 40px; } }
+  .action-inner .pending { flex: 1; min-width: 0; font-size: 12px; color: var(--w-45); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .action-inner .pending b { color: var(--sky-300); font-weight: 500; }
+  .action-inner .btn { width: auto; margin: 0; }
+  .action-inner .bar-btn { padding: 0 12px; height: 38px; font-size: 13px; }
+  .action-inner .bar-main { height: 38px; padding: 0 18px; }
+  @media (max-width: 480px) { .action-inner .pending { display: none; } .action-inner .bar-main { flex: 1; } }
+  .set-list .set-row, .set-list .num-row, .set-list .switch-row { padding: 9px 0; border-bottom: 1px solid var(--w-05); margin: 0; }
+  .set-list > :last-child { border-bottom: 0; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .set-row .name { font-size: 12px; color: var(--w-60); }
+  .set-row .name small { display: block; font-size: 10px; color: rgba(252,165,165,.7); margin-top: 1px; }
+  .set-row select.input { min-width: 0; max-width: 58%; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { border: 1px solid var(--w-10); border-radius: 10px; padding: 10px; }
+  .stat label { display: block; font-size: 11px; color: var(--w-45); margin-bottom: 6px; }
+  .stat-in { display: flex; gap: 6px; }
+  .stat-in .input { height: 32px; font-size: 13px; text-align: right; min-width: 0; }
+  .helper-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .helper-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: var(--w-45); }
+  .helper-grid .input { height: 30px; font-size: 12px; text-align: center; }
+  .toggle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .toggle-chips label { cursor: pointer; }
+  .toggle-chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .toggle-chips span { display: inline-block; height: 28px; line-height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--w-15); font-size: 11px; color: var(--w-60); transition: all .15s; }
+  .toggle-chips input:checked + span { border-color: rgba(56,189,248,.7); background: rgba(56,189,248,.08); color: var(--sky-300); }
+  .toggle-chips input:focus-visible + span { outline: 2px solid rgba(56,189,248,.6); outline-offset: 2px; }
+  .check-list { display: flex; flex-direction: column; gap: 8px; }
+  .check-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--w-10); border-radius: 10px; cursor: pointer; }
+  .check-row:hover { border-color: var(--w-15); }
+  .check-row input { margin-top: 2px; accent-color: #38bdf8; width: 15px; height: 15px; flex: none; }
+  .check-row b { display: block; font-size: 12px; font-weight: 500; color: var(--w-80); }
+  .check-row small { display: block; margin-top: 2px; font-size: 11px; line-height: 1.5; color: var(--w-40); }
+  .check-row:has(input:checked) { border-color: rgba(56,189,248,.5); background: rgba(56,189,248,.04); }
   .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip-grid button { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--w-15); background: transparent;
                       font-size: 11px; color: var(--w-60); cursor: pointer; transition: all .15s; }
@@ -438,19 +484,29 @@
   </section>
 
   <aside class="panel card">
+    <div class="panel-tools">
+      <div class="tool-search"><svg class="i16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="optSearch" autocomplete="off" placeholder="Find an option… (e.g. talents, medals)" /></div>
+      <button type="button" class="link-btn" id="collapseAll">Collapse all</button>
+    </div>
+    <p class="hint hidden" id="searchEmpty" style="margin:0 0 12px">No options match.</p>
     <div class="stack">
-      <div>
-        <p class="section-title">Items</p>
-        <div id="numbers"></div>
-      </div>
+      <details class="fold" id="basicFold" data-keywords="catfood xp np leadership tickets 고양이 통조림 경험치 티켓 통솔력" open>
+        <summary><p class="section-title">Items</p><span class="badge hidden" id="basicFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div id="numbers"></div>
+        </div>
+      </details>
 
-      <div>
-        <p class="section-title">Cats</p>
+      <details class="fold auto-badge" id="charFold" data-keywords="unlock true form 획득 진화" open>
+        <summary><p class="section-title">Cats</p><span class="badge hidden" id="charFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-cat"/></svg> Unlock all cats</span><span class="switch"><input type="checkbox" name="unlock_cats" /><span class="track"></span></span></label>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-sparkles"/></svg> True form unlocked cats</span><span class="switch"><input type="checkbox" name="true_form_cats" /><span class="track"></span></span></label>
-      </div>
+        </div>
+      </details>
 
-      <details class="fold" id="catFold">
+      <details class="fold" id="catFold" data-keywords="cats characters add remove level 캐릭터 추가 삭제 레벨 레벨업">
         <summary><p class="section-title">Characters</p><span class="badge hidden" id="catBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <p class="sub-title">Find by ID or name</p>
@@ -485,7 +541,51 @@
         </div>
       </details>
 
-      <details class="fold" id="orbFold">
+      <details class="fold auto-badge" id="formFold" data-keywords="true form ultra 4th fourth talents guide 제3형태 제4형태 본능 도감 진화">
+        <summary><p class="section-title">Forms & talents</p><span class="badge hidden" id="formFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="seg" id="formTarget" style="grid-template-columns:1fr 1fr">
+            <button type="button" data-target="all" aria-pressed="true">All owned</button>
+            <button type="button" data-target="picked" aria-pressed="false">Picked (Lv)</button>
+          </div>
+          <p class="hint" id="formPickedNote" style="margin-top:8px"></p>
+          <div class="set-list">
+          <div class="set-row"><label class="name" for="f-form_true">True form (3rd)</label>
+            <select class="input" id="f-form_true" name="form_true" data-send>
+              <option value="">Don't change</option>
+              <option value="evolve">Evolve</option>
+              <option value="force">Force evolve</option>
+              <option value="remove">Remove</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-form_fourth">Ultra form (4th)</label>
+            <select class="input" id="f-form_fourth" name="form_fourth" data-send>
+              <option value="">Don't change</option>
+              <option value="evolve">Evolve</option>
+              <option value="force">Force evolve</option>
+              <option value="remove">Remove</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-form_talents">Talents</label>
+            <select class="input" id="f-form_talents" name="form_talents" data-send>
+              <option value="">Don't change</option>
+              <option value="max">Max all</option>
+              <option value="remove">Reset</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-form_guide">Cat guide</label>
+            <select class="input" id="f-form_guide" name="form_guide" data-send>
+              <option value="">Don't change</option>
+              <option value="add">Mark collected</option>
+              <option value="remove">Remove</option>
+            </select>
+          </div>
+          </div>
+          <p class="hint" style="margin-top:10px">“Evolve” only uses forms the character really has. “Force” sets the form even if the game has none, which can look glitched. Picked characters come from the Lv button in Characters.</p>
+        </div>
+      </details>
+
+      <details class="fold" id="orbFold" data-keywords="talent orbs 본능 구슬">
         <summary><p class="section-title">Talent orbs</p><span class="badge hidden" id="orbBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -510,7 +610,7 @@
         </div>
       </details>
 
-      <details class="fold item-fold" id="fruitFold" data-group="fruit">
+      <details class="fold item-fold" id="fruitFold" data-keywords="catfruit seeds 개다래 씨앗 열매" data-group="fruit">
         <summary><p class="section-title">Catfruit & seeds</p><span class="badge hidden" id="fruitBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -528,7 +628,7 @@
         </div>
       </details>
 
-      <details class="fold item-fold" id="stoneFold" data-group="stone">
+      <details class="fold item-fold" id="stoneFold" data-keywords="behemoth stones gems crystals 수석 결정" data-group="stone">
         <summary><p class="section-title">Behemoth stones & gems (crystals)</p><span class="badge hidden" id="stoneBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -546,7 +646,7 @@
         </div>
       </details>
 
-      <details class="fold item-fold" id="eyeFold" data-group="eye">
+      <details class="fold item-fold" id="eyeFold" data-keywords="catseyes 캣츠아이" data-group="eye">
         <summary><p class="section-title">Catseyes</p><span class="badge hidden" id="eyeBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -564,7 +664,7 @@
         </div>
       </details>
 
-      <details class="fold item-fold" id="battleFold" data-group="battle">
+      <details class="fold item-fold" id="battleFold" data-keywords="battle items speed up treasure radar endless 배틀 아이템 무제한" data-group="battle">
         <summary><p class="section-title">Battle items</p><span class="badge hidden" id="battleBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -577,12 +677,22 @@
             <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
           </div>
           <div class="hidden" id="battlePicks" style="margin-top:18px"></div>
+          <div class="num-row" style="margin-top:14px"><label class="name" for="endlessSel">Endless use (for these types)</label>
+            <select class="input" id="endlessSel">
+              <option value="">Don't change</option>
+              <option value="60">1 hour</option>
+              <option value="1440">1 day</option>
+              <option value="10080">7 days</option>
+              <option value="43200">30 days</option>
+              <option value="inf">Forever</option>
+            </select>
+          </div>
           <p class="hint" id="battleStatus" style="margin-top:12px"></p>
           <p class="hint" id="battleHint" style="margin-top:8px"></p>
         </div>
       </details>
 
-      <details class="fold item-fold" id="drinkFold" data-group="drink">
+      <details class="fold item-fold" id="drinkFold" data-keywords="catamins 고양이 드링크" data-group="drink">
         <summary><p class="section-title">Catamins</p><span class="badge hidden" id="drinkBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -600,7 +710,7 @@
         </div>
       </details>
 
-      <details class="fold item-fold" id="chestFold" data-group="chest">
+      <details class="fold item-fold" id="chestFold" data-keywords="treasure chests 보물 상자" data-group="chest">
         <summary><p class="section-title">Treasure chests</p><span class="badge hidden" id="chestBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
           <div class="num-row">
@@ -618,7 +728,85 @@
         </div>
       </details>
 
-      <details class="fold" id="stageFold">
+      <details class="fold item-fold" id="materialFold" data-keywords="base materials bricks 성 재료 벽돌" data-group="material">
+        <summary><p class="section-title">Base materials</p><span class="badge hidden" id="materialBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="materialCount">Amount of each</label>
+            <input class="input" id="materialCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-item-max="material">Max</button>
+          </div>
+          <div class="seg item-mode" data-group="material" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All types</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
+          </div>
+          <div class="hidden" id="materialPicks" style="margin-top:18px"></div>
+          <p class="hint" id="materialStatus" style="margin-top:12px"></p>
+          <p class="hint" id="materialHint" style="margin-top:8px"></p>
+        </div>
+      </details>
+
+      <details class="fold item-fold" id="medalFold" data-keywords="labyrinth medals 미궁 메달 훈장" data-group="medal">
+        <summary><p class="section-title">Labyrinth medals</p><span class="badge hidden" id="medalBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="medalCount">Amount of each</label>
+            <input class="input" id="medalCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-item-max="medal">Max</button>
+          </div>
+          <div class="seg item-mode" data-group="medal" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All types</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
+          </div>
+          <div class="hidden" id="medalPicks" style="margin-top:18px"></div>
+          <p class="hint" id="medalStatus" style="margin-top:12px"></p>
+          <p class="hint" id="medalHint" style="margin-top:8px"></p>
+        </div>
+      </details>
+
+      <details class="fold auto-badge" id="skillFold" data-keywords="special skills cat cannon power up 특수 능력 냥코 대포 파워업 강화">
+        <summary><p class="section-title">Special skills (base power-ups)</p><span class="badge hidden" id="skillFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row"><label class="name" for="f-skill_level">Level</label>
+            <input class="input" id="f-skill_level" name="skill_level" autocomplete="off" placeholder="e.g. max+max" data-send style="width:140px" />
+          </div>
+          <div class="seg" id="skillMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All skills</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick skills</button>
+          </div>
+          <div class="chip-grid hidden" id="skillPicks" style="margin-top:14px"></div>
+          <p class="hint" id="skillStatus" style="margin-top:10px"></p>
+          <p class="hint" style="margin-top:6px">Type level+plus like 20+10, or max+max. Each skill stops at its own limit (hover a button to see it).</p>
+        </div>
+      </details>
+
+      <details class="fold auto-badge" id="ototoFold" data-keywords="ototo cat cannon engineers 오토토 냥코 대포 조수 기술자">
+        <summary><p class="section-title">Ototo & cat cannon</p><span class="badge hidden" id="ototoFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row"><label class="name" for="f-engineers">Engineers</label>
+            <input class="input" id="f-engineers" name="engineers" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            <button type="button" class="max-btn" data-fill="engineers" data-fill-value="engineers_max">Max</button>
+          </div>
+          <div style="margin-top:14px">          <label class="switch-row"><span class="name">Max all cat cannons (every part)</span><span class="switch"><input type="checkbox" name="max_cannons" data-send /><span class="track"></span></span></label></div>
+          <p class="hint" style="margin-top:10px">Base materials for building cannons have their own section below.</p>
+        </div>
+      </details>
+
+      <details class="fold auto-badge" id="gamaFold" data-keywords="gamatoto helpers cat shrine 가마토토 대원 고양이 신사">
+        <summary><p class="section-title">Gamatoto & cat shrine</p><span class="badge hidden" id="gamaFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="stat-grid">
+            <div class="stat"><label for="f-gama_level">Gamatoto level</label><div class="stat-in"><input class="input" id="f-gama_level" name="gama_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="gama_level" data-fill-value="gamatoto_max">Max</button></div></div>
+            <div class="stat"><label for="f-shrine_level">Cat shrine level</label><div class="stat-in"><input class="input" id="f-shrine_level" name="shrine_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="shrine_level" data-fill-value="shrine_max">Max</button></div></div>
+          </div>
+          <p class="sub-title">Gamatoto helpers <span id="helperRoom" class="hint"></span></p>
+          <div class="helper-grid" id="helperGrid"></div>
+          <div style="margin-top:14px">          <label class="switch-row"><span class="name">Make the cat shrine appear</span><span class="switch"><input type="checkbox" name="shrine_show" data-send /><span class="track"></span></span></label></div>
+          <p class="hint" style="margin-top:10px">Helpers: how many of each rank to send (the total can't go over the team size).</p>
+        </div>
+      </details>
+
+      <details class="fold" id="stageFold" data-keywords="stages story legend treasures uncanny zero event collab gauntlet tower 스테이지 스토리 레전드 보물 이벤트 콜라보 건틀렛 탑">
         <summary><p class="section-title">Stages</p><span class="badge hidden" id="stageBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="fold-body">
         <p class="sub-title">Story</p>
@@ -652,6 +840,17 @@
           <label class="switch-row"><span class="name">Zero Legends</span><span class="switch"><input type="checkbox" name="clear_zero" data-stage-edit /><span class="track"></span></span></label>
           <label class="switch-row"><span class="name">Event stages</span><span class="switch"><input type="checkbox" name="clear_event" data-stage-edit /><span class="track"></span></span></label>
           <label class="switch-row"><span class="name">Collab stages</span><span class="switch"><input type="checkbox" name="clear_collab" data-stage-edit /><span class="track"></span></span></label>
+        <p class="sub-title">More stages</p>
+        <div class="toggle-chips">
+          <label><input type="checkbox" name="clear_gauntlet" data-stage-edit /><span>Gauntlets</span></label>
+          <label><input type="checkbox" name="clear_collab_gauntlet" data-stage-edit /><span>Collab gauntlets</span></label>
+          <label><input type="checkbox" name="clear_behemoth" data-stage-edit /><span>Behemoth Culling</span></label>
+          <label><input type="checkbox" name="clear_enigma" data-stage-edit /><span>Enigma stages</span></label>
+          <label><input type="checkbox" name="clear_tower" data-stage-edit /><span>Towers</span></label>
+          <label><input type="checkbox" name="clear_legend_quest" data-stage-edit /><span>Legend Quest</span></label>
+          <label><input type="checkbox" name="clear_catamin_stage" data-stage-edit /><span>Catamin stages</span></label>
+          <label><input type="checkbox" name="clear_catclaw" data-stage-edit /><span>Catclaw Championships</span></label>
+        </div>
         <div class="switch-row" style="margin-top:14px"><label class="name" for="mapCrowns"><svg class="i16"><use href="#i-crown"/></svg> Crowns</label>
           <select class="input" id="mapCrowns" name="map_crowns">
             <option value="0">Max</option>
@@ -665,20 +864,117 @@
         </div>
       </details>
 
+      <details class="fold auto-badge" id="specialFold" data-keywords="aku outbreaks zombie filibuster challenge dojo score itf 악마 좀비 필리버스터 챌린지 도장 점수">
+        <summary><p class="section-title">Special stages & scores</p><span class="badge hidden" id="specialFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="set-list">
+          <label class="switch-row"><span class="name">Unlock the Aku realm</span><span class="switch"><input type="checkbox" name="aku_realm" data-send /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Clear the Aku chapter</span><span class="switch"><input type="checkbox" name="aku_chapters" data-send /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Clear Zombie outbreaks</span><span class="switch"><input type="checkbox" name="outbreaks" data-send /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Allow Filibuster stage re-clearing</span><span class="switch"><input type="checkbox" name="filibuster" data-send /><span class="track"></span></span></label>
+          </div>
+          <p class="sub-title">Scores</p>
+          <div class="num-row"><label class="name" for="f-score_challenge">Challenge Battle score</label>
+            <input class="input" id="f-score_challenge" name="score_challenge" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            
+          </div>
+          <div class="num-row"><label class="name" for="f-score_dojo">Dojo score</label>
+            <input class="input" id="f-score_dojo" name="score_dojo" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            
+          </div>
+          <div class="num-row"><label class="name" for="f-score_itf">ItF timed scores</label>
+            <input class="input" id="f-score_itf" name="score_itf" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            
+          </div>
+        </div>
+      </details>
+
+      <details class="fold auto-badge" id="progressFold" data-keywords="lineup slots playtime rank rewards medals missions enemy guide gold pass 편성 슬롯 플레이 시간 랭크 보상 메달 미션 적 도감 골드 회원">
+        <summary><p class="section-title">Progress & account</p><span class="badge hidden" id="progressFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="set-list">
+          <div class="num-row"><label class="name" for="f-slots">Lineup slots</label>
+            <input class="input" id="f-slots" name="slots" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            <button type="button" class="max-btn" data-fill="slots" data-fill-value="max">Max</button>
+          </div>
+          <div class="num-row"><label class="name" for="f-playtime_hours">Playtime (hours)</label>
+            <input class="input" id="f-playtime_hours" name="playtime_hours" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+            
+          </div>
+          <div class="set-row"><label class="name" for="f-rank_rewards">User rank rewards</label>
+            <select class="input" id="f-rank_rewards" name="rank_rewards" data-send>
+              <option value="">Don't change</option>
+              <option value="claim">Mark earned ones claimed</option>
+              <option value="fix">Fix wrongly claimed</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-medals">Meow medals</label>
+            <select class="input" id="f-medals" name="medals" data-send>
+              <option value="">Don't change</option>
+              <option value="add">Add all</option>
+              <option value="remove">Remove all</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-missions">Missions</label>
+            <select class="input" id="f-missions" name="missions" data-send>
+              <option value="">Don't change</option>
+              <option value="reward">Complete (reward ready)</option>
+              <option value="claimed">Complete and claimed</option>
+              <option value="reset">Reset</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-enemy_guide">Enemy guide</label>
+            <select class="input" id="f-enemy_guide" name="enemy_guide" data-send>
+              <option value="">Don't change</option>
+              <option value="add">Unlock all</option>
+              <option value="remove">Remove all</option>
+            </select>
+          </div>
+          <div class="set-row"><label class="name" for="f-gold_pass">Gold pass<small>higher ban risk</small></label>
+            <select class="input" id="f-gold_pass" name="gold_pass" data-send>
+              <option value="">Don't change</option>
+              <option value="give">Give 30 days</option>
+              <option value="remove">Remove</option>
+            </select>
+          </div>
+          <label class="switch-row"><span class="name">Make the restart pack available</span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Reset Wildcat Slots & Cat Scratcher</span><span class="switch"><input type="checkbox" name="reset_gambling" data-send /><span class="track"></span></span></label>
+          <label class="switch-row"><span class="name">Reset Golden Cat CPU uses</span><span class="switch"><input type="checkbox" name="reset_golden_cpu" data-send /><span class="track"></span></span></label>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold auto-badge" id="fixFold" data-keywords="fix repair crash error time 수리 오류 시간">
+        <summary><p class="section-title">Repair tools</p><span class="badge hidden" id="fixFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="check-list">
+            <label class="check-row"><input type="checkbox" name="fix_gamatoto" data-send /><span><b>Gamatoto crash</b><small>Resets the Gamatoto skin if opening Gamatoto crashes the game.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="fix_ototo" data-send /><span><b>Ototo crash</b><small>Resets the cat cannons if opening Ototo crashes the game (cannon progress is lost).</small></span></label>
+            <label class="check-row"><input type="checkbox" name="fix_time" data-send /><span><b>Time errors</b><small>Fixes “time error” messages and energy/Gamatoto timers by syncing the save's clock.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="fix_equip" data-send /><span><b>Equip menu</b><small>Unlocks the Equip menu if it's missing.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="fix_officer" data-send /><span><b>Officer pass crash</b><small>Resets the officer club pass if it crashes the game.</small></span></label>
+          </div>
+        </div>
+      </details>
+
       <div id="safetyBlock">
         <p class="section-title">Safety</p>
         <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-user"/></svg> Upload to a new account ID</span><span class="switch"><input type="checkbox" name="new_account" /><span class="track"></span></span></label>
       </div>
 
-      <div>
-        <button class="btn btn-primary" type="submit" id="submit"><span id="submitLabel">Edit &amp; upload</span></button>
-        <button class="btn btn-outline" type="button" id="reset">Clear edits</button>
-      </div>
 
       <p class="hint">Cat Food and premium tickets carry the highest ban risk. XP, NP, battle items and unlocking cats are safer. Always keep your backup.</p>
     </div>
   </aside>
 </main>
+<div class="action-bar" role="region" aria-label="Edit actions">
+  <div class="action-inner">
+    <span class="pending" id="pendingText">No edits set</span>
+    <button type="button" class="btn btn-outline bar-btn" id="toTop" aria-label="Back to top">↑</button>
+    <button class="btn btn-outline bar-btn" type="button" id="reset">Clear edits</button>
+    <button class="btn btn-primary bar-main" type="submit" id="submit"><span id="submitLabel">Edit &amp; upload</span></button>
+  </div>
+</div>
 </form>
 
 <footer>
@@ -711,6 +1007,7 @@
     { key: "rare_tickets",     label: "Rare Tickets",     max: 299,      risk: true },
     { key: "platinum_tickets", label: "Platinum Tickets", max: 9,        risk: true },
     { key: "legend_tickets",   label: "Legend Tickets",   max: 4,        risk: true },
+    { key: "hundred_million_ticket", label: '100M DL Celebration Ticket', max: 9999 },
     { key: "platinum_shards",  label: "Platinum Shards",  max: 90 },
   ];
   const LABELS = Object.fromEntries(NUMBERS.map(n => [n.key, n.label]));
@@ -832,7 +1129,7 @@
       lvB.addEventListener("click", () => {
         if (catPick.level.has(id)) catPick.level.delete(id); else catPick.level.set(id, name);
         if (catPick.level.size) setLevelTarget("picked");
-        renderCatChips(); renderCatResults();
+        renderCatChips(); renderCatResults(); updateExtras();
       });
       row.append(cid, nm, addB, rmB, lvB);
       box.appendChild(row);
@@ -892,7 +1189,7 @@
   const itemText = { loading: 'Loading item names…', failed: "Couldn't load the item list. Try again in a moment.", hint: 'Sets how many of each chosen type you have (0 removes them). Up to {max} each.', match: '{n} types selected',
                      matchOne: '1 type selected', matchAll: 'All {n} types', selected: '{n} set' };
   const itemLists = {};
-  const ITEM_GROUPS = ["fruit", "stone", "eye", "battle", "drink", "chest"];
+  const ITEM_GROUPS = ["fruit", "stone", "eye", "battle", "drink", "chest", "material", "medal"];
   const itemMode = Object.fromEntries(ITEM_GROUPS.map(g => [g, "all"]));
   const itemCap = (g) => (itemData && itemData.max[g]) || (g === "fruit" || g === "stone" ? 998 : 9999);
   let itemData = null;
@@ -938,7 +1235,7 @@
       $(g + "Status").textContent = itemMode[g] === "all" ? itemText.matchAll.replace("{n}", n)
         : (n === 1 ? itemText.matchOne : itemText.match.replace("{n}", n));
     }
-    const set = $(g + "Count").value.trim() !== "";
+    const set = $(g + "Count").value.trim() !== "" || (g === "battle" && $("endlessSel").value !== "");
     $(g + "Badge").textContent = itemText.selected.replace("{n}", set ? 1 : 0);
     $(g + "Badge").classList.toggle("hidden", !set);
   }
@@ -951,6 +1248,7 @@
   }
   document.querySelectorAll(".item-mode button").forEach(b => b.addEventListener("click", () => setItemMode(b.parentElement.dataset.group, b.dataset.mode)));
   document.querySelectorAll(".item-fold").forEach(f => f.addEventListener("toggle", () => { if (f.open) loadItems(); }));
+  $("endlessSel").addEventListener("focus", loadItems);
   document.querySelectorAll("[data-item-max]").forEach(b => b.addEventListener("click", () => {
     const g = b.dataset.itemMax; $(g + "Count").value = fmtNum(itemCap(g)); updateItemStatus(g);
   }));
@@ -1021,6 +1319,114 @@
   $("orbFold").addEventListener("toggle", () => { if ($("orbFold").open) loadOrbs(); });
   $("orbMax").addEventListener("click", () => { $("orbCount").value = String((orbData && orbData.max) || 998); updateOrbStatus(); });
   $("orbCount").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^\d]/g, "").slice(0, 3); updateOrbStatus(); });
+
+  // ---- extra sections: forms & talents, special skills, Ototo, Gamatoto, special stages, progress, fixes ----
+  const xText = {'pending': '<b>{n}</b> edit{s} set in {sections}', 'none': 'No edits set', 'picked': '{n} characters picked with Lv', 'picked_none': 'No characters picked yet — use the Lv button in Characters.', 'skills_all': 'All {n} skills', 'skills_pick': '{n} skills selected', 'max_hint': 'max {v}', 'room': '(team size {n})', 'need_form_pick': 'Pick characters with the Lv button, or choose All owned.', 'need_skill_pick': 'Pick at least one skill, or choose All skills.', 'loading': 'Loading…', 'selected': '{n} set', 'infinite': 'Forever'};
+  const extrasLists = {};
+  let extrasData = null, formTarget = "all", skillMode = "all";
+  async function loadExtras() {
+    const cc = catRegion();
+    if (!extrasLists[cc]) {
+      $("skillStatus").textContent = xText.loading;
+      try {
+        const r = await fetch(`/api/extras?cc=${cc}`); const data = await r.json();
+        if (!data.ok) throw new Error(data.error);
+        extrasLists[cc] = data;
+      } catch { $("skillStatus").textContent = itemText.failed; return; }
+    }
+    if (cc !== catRegion() || extrasData === extrasLists[cc]) return;
+    extrasData = extrasLists[cc];
+    const keep = new Set([...document.querySelectorAll("#skillPicks button[aria-pressed=true]")].map(b => b.dataset.id));
+    $("skillPicks").innerHTML = "";
+    extrasData.skills.forEach(([id, name]) => {
+      const b = document.createElement("button"); b.type = "button"; b.dataset.id = id; b.textContent = name;
+      const mx = extrasData.skill_max[id]; if (mx) b.title = xText.max_hint.replace("{v}", `${mx[0]}+${mx[1]}`);
+      b.setAttribute("aria-pressed", String(keep.has(String(id))));
+      b.addEventListener("click", () => { b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); updateExtras(); });
+      $("skillPicks").appendChild(b);
+    });
+    const keepH = [...document.querySelectorAll("#helperGrid input")].map(i => i.value);
+    $("helperGrid").innerHTML = "";
+    extrasData.helper_rarities.forEach((name, i) => {
+      const lab = document.createElement("label"); lab.textContent = name;
+      const inp = document.createElement("input"); inp.className = "input"; inp.inputMode = "numeric"; inp.placeholder = "—"; inp.value = keepH[i] || "";
+      inp.dataset.num = ""; inp.addEventListener("input", () => { inp.value = inp.value.replace(/[^\d]/g, "").slice(0, 3); updateExtras(); });
+      lab.appendChild(inp); $("helperGrid").appendChild(lab);
+    });
+    $("helperRoom").textContent = xText.room.replace("{n}", extrasData.helpers_max);
+    const eng = document.querySelector('label[for="f-engineers"]'); if (eng && extrasData.engineers_name) eng.textContent = extrasData.engineers_name;
+    updateExtras();
+  }
+  ["formFold", "skillFold", "ototoFold", "gamaFold"].forEach(id => $(id).addEventListener("toggle", () => { if ($(id).open) loadExtras(); }));
+  // number fields: digits only (Max buttons may fill "max")
+  form.querySelectorAll("[data-send][data-num]").forEach(inp => inp.addEventListener("input", () => {
+    if (inp.value.toLowerCase() !== "max" && inp.value !== 'max') inp.value = inp.value.replace(/[^\d]/g, "");
+  }));
+  document.querySelectorAll("[data-fill]").forEach(b => b.addEventListener("click", () => {
+    const v = b.dataset.fillValue, target = $("f-" + b.dataset.fill);
+    target.value = v === "max" ? 'max' : String((extrasData && extrasData[v]) || 'max');
+    updateExtras();
+  }));
+  document.querySelectorAll("#formTarget button").forEach(b => b.addEventListener("click", () => setFormTarget(b.dataset.target)));
+  function setFormTarget(t) {
+    formTarget = t;
+    document.querySelectorAll("#formTarget button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === t)));
+    updateExtras();
+  }
+  document.querySelectorAll("#skillMode button").forEach(b => b.addEventListener("click", () => {
+    skillMode = b.dataset.mode;
+    document.querySelectorAll("#skillMode button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    $("skillPicks").classList.toggle("hidden", skillMode !== "pick");
+    updateExtras();
+  }));
+  const skillPicked = () => [...document.querySelectorAll("#skillPicks button[aria-pressed=true]")].map(b => b.dataset.id);
+  function updateExtras() {
+    const n = catPick.level.size;
+    $("formPickedNote").textContent = formTarget === "picked" ? (n ? xText.picked.replace("{n}", n) : xText.picked_none) : "";
+    if (extrasData) $("skillStatus").textContent = skillMode === "all" ? xText.skills_all.replace("{n}", extrasData.skills.length)
+      : xText.skills_pick.replace("{n}", skillPicked().length);
+    document.querySelectorAll("details.auto-badge").forEach(f => {
+      const count = [...f.querySelectorAll("[data-send], #helperGrid input")].filter(el =>
+        el.type === "checkbox" ? el.checked : el.value.trim() !== "").length;
+      const badge = $(f.id + "Badge"); if (!badge) return;
+      badge.textContent = xText.selected.replace("{n}", count); badge.classList.toggle("hidden", count === 0);
+    });
+    updatePending();
+  }
+  form.addEventListener("input", () => updateExtras());
+  form.addEventListener("change", () => updateExtras());
+  $("endlessSel").addEventListener("change", () => updateItemStatus("battle"));
+
+  // ---- navigation: search options, collapse all, fixed action bar with a pending-edits count ----
+  const folds = () => [...document.querySelectorAll("aside details.fold")];
+  $("optSearch").addEventListener("input", () => {
+    const q = $("optSearch").value.trim().toLowerCase();
+    let shown = 0;
+    folds().forEach(f => {
+      const hit = !q || f.textContent.toLowerCase().includes(q) || (f.dataset.keywords || "").toLowerCase().includes(q) || [...f.querySelectorAll("option, [title]")].some(o => (o.textContent + " " + (o.title || "")).toLowerCase().includes(q));
+      f.classList.toggle("hidden", !hit);
+      if (q && hit) { f.open = true; shown++; }
+    });
+    $("searchEmpty").classList.toggle("hidden", !q || shown > 0);
+  });
+  $("optSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+  $("collapseAll").addEventListener("click", () => folds().forEach(f => f.open = false));
+  $("toTop").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  function updatePending() {
+    const sections = [];
+    folds().forEach(f => {
+      const badge = f.querySelector(":scope > summary .badge");
+      const title = f.querySelector(":scope > summary .section-title").textContent;
+      if (badge && !badge.classList.contains("hidden")) sections.push(title);
+    });
+    const nums = [...document.querySelectorAll("#numbers input")].filter(i => i.value.trim()).length;
+    if (nums) sections.unshift($("basicFold").querySelector(".section-title").textContent);
+    const quick = [...document.querySelectorAll('#charFold input[type=checkbox], #safetyBlock input[type=checkbox]')].filter(c => c.checked).length;
+    const total = sections.length + (quick ? 1 : 0);
+    $("pendingText").innerHTML = total ? xText.pending.replace("{n}", total).replace("{s}", total === 1 ? "" : "s")
+      .replace("{sections}", sections.slice(0, 3).join(", ") + (sections.length > 3 ? " …" : "")) : xText.none;
+  }
+  setInterval(updatePending, 1500);   // badges set by other sections update on their own schedule
 
   // ---- story chapters ----
   const chapterBtns = [...document.querySelectorAll("#chapters button")];
@@ -1095,9 +1501,15 @@
     chapterBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("treasureLevel").value = "";
     $("mapCrowns").value = "0";
+    form.querySelectorAll("[data-send]").forEach(el => { if (el.type === "checkbox") el.checked = false; else el.value = ""; });
+    document.querySelectorAll("#helperGrid input").forEach(i => i.value = "");
+    document.querySelectorAll("#skillPicks button").forEach(b => b.setAttribute("aria-pressed", "false"));
+    $("endlessSel").value = ""; setFormTarget("all");
+    document.querySelector('#skillMode button[data-mode="all"]').click();
     ITEM_GROUPS.forEach(g => { $(g + "Count").value = ""; itemMode[g] = "all"; setItemMode(g, "all"); });
     $("orbCount").value = ""; document.querySelectorAll(".chip-grid button").forEach(b => b.setAttribute("aria-pressed", "false"));
     setOrbMode("all");
+    ITEM_GROUPS.forEach(g => updateItemStatus(g)); updateStageBadge(); updateCatBadge(); updateExtras();
     catPick.add.clear(); catPick.remove.clear(); catPick.level.clear(); $("levelInput").value = ""; setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("catSearch").value = ""; renderCatChips(); renderCatResults();
     updateStageBadge();
@@ -1174,6 +1586,29 @@
       if (!ids.length) return showError(itemText.failed);
       fd.append(`items_${g}`, ids.map(id => `${id}:${amount}`).join(",")); anyEdit = true;
     }
+    // extra sections: every [data-send] field, plus picks and helper counts
+    let extraEdit = false;
+    form.querySelectorAll("[data-send]").forEach(el => {
+      if (el.type === "checkbox") { if (el.checked) { fd.append(el.name, "1"); extraEdit = true; } }
+      else if (el.value.trim()) { fd.append(el.name, el.value.trim()); extraEdit = true; }
+    });
+    const helpers = [...document.querySelectorAll("#helperGrid input")].map(i => i.value.trim());
+    if (helpers.some(Boolean)) { fd.append("gama_helpers", helpers.map(v => v || "0").join(",")); extraEdit = true; }
+    if (["form_true", "form_fourth", "form_talents", "form_guide"].some(k => $("f-" + k).value)) {
+      if (formTarget === "picked" && !catPick.level.size) return showError(xText.need_form_pick);
+      fd.append("form_target", formTarget);
+      if (formTarget === "picked") fd.append("form_ids", [...catPick.level.keys()].join(","));
+    }
+    if ($("f-skill_level").value.trim()) {
+      if (skillMode === "pick" && !skillPicked().length) return showError(xText.need_skill_pick);
+      fd.append("skill_mode", skillMode); fd.append("skill_ids", skillPicked().join(","));
+    }
+    if ($("endlessSel").value) {
+      const ids = itemMode.battle === "all" ? itemIds("battle") : itemPicked("battle");
+      if (!ids.length) return showError(itemText.failed);
+      fd.append("endless_minutes", $("endlessSel").value); fd.append("endless_ids", ids.join(",")); extraEdit = true;
+    }
+    if (extraEdit) anyEdit = true;
     const orbCount = $("orbCount").value.trim();
     if (orbCount) {
       fd.append("orb_mode", orbMode); fd.append("orb_count", orbCount);
