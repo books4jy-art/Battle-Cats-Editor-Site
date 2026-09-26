@@ -385,7 +385,7 @@ def edit():
             return fail("Choose at least one thing to edit. Transfer codes only work once, "
                         "so the save has to be re-uploaded with changes.")
         job.update(transfer_code=tc, confirmation_code=pin,
-                   new_account=form.get("new_account") in ("1", "true", "on"))
+                   new_account=False)  # the new-account upload option was removed from the site
     else:
         upload = request.files.get("save_file")
         if upload is None or not upload.filename:
