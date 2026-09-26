@@ -324,23 +324,51 @@ ITEM_GROUP_NAMES = {'fruit': 'Catfruit & seeds', 'stone': 'Behemoth stones & gem
 BEHEMOTH_GROUP = 9  # matatabi group of behemoth stones/gems (the "crystals")
 
 
+def short_labels(names: list[str]) -> list[str]:
+    """Drop the words every name in a group shares ("Purple Catfruit Seed" -> "Purple")."""
+    if len(names) < 2:
+        return names
+    prefix = os.path.commonprefix(names)
+    suffix = os.path.commonprefix([n[::-1] for n in names])[::-1]
+    # only strip whole words / bracketed parts, never half a word
+    if not prefix.endswith((" ", "[", "【")):
+        cut = max(prefix.rfind(" "), prefix.rfind("["), prefix.rfind("【"))
+        prefix = prefix[:cut + 1] if cut >= 0 else ""
+    if not suffix.startswith((" ", "]", "】")):
+        cuts = [i for i in (suffix.find(" "), suffix.find("]"), suffix.find("】")) if i >= 0]
+        suffix = suffix[min(cuts):] if cuts else ""
+    out = [n[len(prefix):len(n) - len(suffix)].strip(" []【】") for n in names]
+    return out if all(out) else names
+
+
 def item_catalog(cc: core.CountryCode) -> dict[str, Any]:
-    """Catfruit/seeds, behemoth stones/gems and catseye types with names, from the newest game data."""
+    """Catfruit/seeds, behemoth stones/gems and catseye types, grouped, with short and full names."""
     save = core.SaveFile(cc=cc, load=False, gv=core.GameVersion(999999))
     matatabi = core.Matatabi(save)
     names = matatabi.get_names()
     eyes = core.core_data.get_gatya_item_buy(save).get_by_category(5)
     if names is None or not matatabi.matatabi or eyes is None:
-        raise RuntimeError("couldn't download game data — try again later")
-    fruit, stone = [], []
+        raise RuntimeError("Couldn't load the item list. Try again in a moment.")
+    parts: dict[str, list[tuple[int, int, str]]] = {"seeds": [], "fruit": [], "stones": [], "gems": []}
     for i, (fr, name) in enumerate(zip(matatabi.matatabi, names)):
-        (stone if fr.group == BEHEMOTH_GROUP else fruit).append([i, name or f"#{i}", fr.sort])
-    fruit.sort(key=lambda x: x[2]); stone.sort(key=lambda x: x[2])
+        if fr.group == BEHEMOTH_GROUP:
+            key = "stones" if fr.sort < 300 else "gems"   # gems sort 300+, stones (incl. epic) below
+        else:
+            key = "seeds" if fr.seed else "fruit"
+        parts[key].append((fr.sort, i, name or f"#{i}"))
+
+    def group(label: str, rows: list[tuple[int, int, str]]) -> dict[str, Any]:
+        rows.sort()
+        full = [r[2] for r in rows]
+        return {"label": label, "items": [[r[1], s, f] for r, s, f in zip(rows, short_labels(full), full)]}
+
     item_names = core.core_data.get_gatya_item_names(save)
+    eye_rows = [(i, i, item_names.get_name(it.id) or f"#{i}") for i, it in enumerate(eyes)]
     maxes = core.core_data.max_value_manager
     return {"ok": True, "cc": cc.get_code(),
-            "fruit": [x[:2] for x in fruit], "stone": [x[:2] for x in stone],
-            "eye": [[i, item_names.get_name(it.id) or f"#{i}"] for i, it in enumerate(eyes)],
+            "fruit": [group('Seeds', parts["seeds"]), group('Fruit', parts["fruit"])],
+            "stone": [group('Stones', parts["stones"]), group('Gems', parts["gems"])],
+            "eye": [group('Catseyes', eye_rows)],
             "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes}}
 
 
