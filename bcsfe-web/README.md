@@ -43,7 +43,6 @@ remove it with ×. The bar pinned to the bottom has the edit button, **Clear edi
 **Cancel edit** button while an edit runs. A transfer-code edit can be cancelled until the edits start being
 applied (if the save was already downloaded, it's uploaded again unchanged so you get working codes back).
 
-There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 

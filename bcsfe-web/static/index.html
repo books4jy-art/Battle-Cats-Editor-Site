@@ -1044,10 +1044,6 @@
       </section>
       </div>
 
-      <div id="safetyBlock">
-        <p class="section-title">Safety</p>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-user"/></svg> Upload to a new account ID</span><span class="switch"><input type="checkbox" name="new_account" /><span class="track"></span></span></label>
-      </div>
 
 
       <p class="hint">Cat Food and premium tickets carry the highest ban risk. XP, NP, battle items and unlocking cats are safer. Always keep your backup.</p>
@@ -1557,12 +1553,10 @@
   function collectEdits() {
     return groups.map(g => {
       const rows = [...g.querySelectorAll("details.fold")].map(f => ({ f, title: clean(f.querySelector(".section-title")), lines: describe(f) })).filter(r => r.lines.length);
-      if (g.id === "grp-account" && mode === "codes" && form.new_account.checked) rows.push({ f: $("safetyBlock"), title: S.safety, lines: [labelOf(form.new_account)] });
       return { g, rows };
     }).filter(d => d.rows.length);
   }
   function clearFold(f) {
-    if (f.id === "safetyBlock") { form.new_account.checked = false; return; }
     f.querySelectorAll("input, select").forEach(el => {
       if (el.id === "catSearch") return;
       if (el.type === "checkbox") el.checked = false; else if (el.tagName === "SELECT") el.selectedIndex = 0; else el.value = "";
@@ -1665,7 +1659,6 @@
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.mode === m)));
     $("pane-codes").classList.toggle("hidden", m !== "codes");
     $("pane-file").classList.toggle("hidden", m !== "file");
-    $("safetyBlock").classList.toggle("hidden", m !== "codes");
     $("ccOptional").classList.toggle("hidden", m !== "file");
     $("submitLabel").textContent = m === "codes" ? "Edit & upload" : "Edit file";
     if (m === "file" && !countryTouched) setCountry(null);
