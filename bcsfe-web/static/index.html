@@ -564,13 +564,59 @@
         </div>
       </details>
 
-      <div>
-        <p class="section-title">Max out</p>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-package"/></svg> Battle items</span><span class="switch"><input type="checkbox" name="max_battle_items" /><span class="track"></span></span></label>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-eye"/></svg> Catseyes</span><span class="switch"><input type="checkbox" name="max_catseyes" /><span class="track"></span></span></label>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-flask"/></svg> Catamins</span><span class="switch"><input type="checkbox" name="max_catamins" /><span class="track"></span></span></label>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-chest"/></svg> Treasure chests</span><span class="switch"><input type="checkbox" name="max_treasure_chests" /><span class="track"></span></span></label>
-      </div>
+      <details class="fold item-fold" id="battleFold" data-group="battle">
+        <summary><p class="section-title">Battle items</p><span class="badge hidden" id="battleBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="battleCount">Amount of each</label>
+            <input class="input" id="battleCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-item-max="battle">Max</button>
+          </div>
+          <div class="seg item-mode" data-group="battle" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All types</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
+          </div>
+          <div class="hidden" id="battlePicks" style="margin-top:18px"></div>
+          <p class="hint" id="battleStatus" style="margin-top:12px"></p>
+          <p class="hint" id="battleHint" style="margin-top:8px"></p>
+        </div>
+      </details>
+
+      <details class="fold item-fold" id="drinkFold" data-group="drink">
+        <summary><p class="section-title">Catamins</p><span class="badge hidden" id="drinkBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="drinkCount">Amount of each</label>
+            <input class="input" id="drinkCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-item-max="drink">Max</button>
+          </div>
+          <div class="seg item-mode" data-group="drink" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All types</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
+          </div>
+          <div class="hidden" id="drinkPicks" style="margin-top:18px"></div>
+          <p class="hint" id="drinkStatus" style="margin-top:12px"></p>
+          <p class="hint" id="drinkHint" style="margin-top:8px"></p>
+        </div>
+      </details>
+
+      <details class="fold item-fold" id="chestFold" data-group="chest">
+        <summary><p class="section-title">Treasure chests</p><span class="badge hidden" id="chestBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="fold-body">
+          <div class="num-row">
+            <label class="name" for="chestCount">Amount of each</label>
+            <input class="input" id="chestCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+            <button type="button" class="max-btn" data-item-max="chest">Max</button>
+          </div>
+          <div class="seg item-mode" data-group="chest" style="grid-template-columns:1fr 1fr;margin-top:12px">
+            <button type="button" data-mode="all" aria-pressed="true">All types</button>
+            <button type="button" data-mode="pick" aria-pressed="false">Pick types</button>
+          </div>
+          <div class="hidden" id="chestPicks" style="margin-top:18px"></div>
+          <p class="hint" id="chestStatus" style="margin-top:12px"></p>
+          <p class="hint" id="chestHint" style="margin-top:8px"></p>
+        </div>
+      </details>
 
       <details class="fold" id="stageFold">
         <summary><p class="section-title">Stages</p><span class="badge hidden" id="stageBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
@@ -846,12 +892,14 @@
   const itemText = { loading: 'Loading item names…', failed: "Couldn't load the item list. Try again in a moment.", hint: 'Sets how many of each chosen type you have (0 removes them). Up to {max} each.', match: '{n} types selected',
                      matchOne: '1 type selected', matchAll: 'All {n} types', selected: '{n} set' };
   const itemLists = {};
-  const ITEM_GROUPS = ["fruit", "stone", "eye"];
-  const itemMode = { fruit: "all", stone: "all", eye: "all" };
+  const ITEM_GROUPS = ["fruit", "stone", "eye", "battle", "drink", "chest"];
+  const itemMode = Object.fromEntries(ITEM_GROUPS.map(g => [g, "all"]));
+  const itemCap = (g) => (itemData && itemData.max[g]) || (g === "fruit" || g === "stone" ? 998 : 9999);
   let itemData = null;
   const fmtNum = (v) => v ? Number(v).toLocaleString("en-US") : "";
-  const itemIds = (g) => itemData ? itemData[g].flatMap(sec => sec.items.map(it => it[0])) : [];
-  const itemPicked = (g) => [...document.querySelectorAll(`#${g}Picks button[aria-pressed=true]`)].map(b => +b.dataset.id);
+  const itemIds = (g) => itemData ? itemData[g].flatMap(sec => sec.items.flatMap(it => it[3] || [it[0]])) : [];
+  const itemPicked = (g) => [...document.querySelectorAll(`#${g}Picks button[aria-pressed=true]`)].flatMap(b => b.dataset.ids.split(",").map(Number));
+  const itemTypeCount = (g) => itemData ? itemData[g].reduce((n, sec) => n + sec.items.length, 0) : 0;
   async function loadItems() {
     const cc = catRegion();
     if (!itemLists[cc]) {
@@ -870,8 +918,9 @@
       for (const sec of itemData[g]) {
         if (itemData[g].length > 1) { const t = document.createElement("p"); t.className = "sub-title"; t.textContent = sec.label; box.appendChild(t); }
         const grid = document.createElement("div"); grid.className = "chip-grid";
-        for (const [id, short, full] of sec.items) {
-          const b = document.createElement("button"); b.type = "button"; b.dataset.id = id; b.textContent = short; b.title = full;
+        for (const [id, short, full, ids] of sec.items) {
+          const b = document.createElement("button"); b.type = "button"; b.dataset.id = id; b.dataset.ids = (ids || [id]).join(",");
+          b.textContent = short; b.title = full;
           b.setAttribute("aria-pressed", String(keep.has(id)));
           b.addEventListener("click", () => { b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true")); updateItemStatus(g); });
           grid.appendChild(b);
@@ -884,7 +933,8 @@
   }
   function updateItemStatus(g) {
     if (itemData) {
-      const n = itemMode[g] === "all" ? itemIds(g).length : itemPicked(g).length;
+      const n = itemMode[g] === "all" ? itemTypeCount(g)
+        : document.querySelectorAll(`#${g}Picks button[aria-pressed=true]`).length;
       $(g + "Status").textContent = itemMode[g] === "all" ? itemText.matchAll.replace("{n}", n)
         : (n === 1 ? itemText.matchOne : itemText.match.replace("{n}", n));
     }
@@ -902,10 +952,10 @@
   document.querySelectorAll(".item-mode button").forEach(b => b.addEventListener("click", () => setItemMode(b.parentElement.dataset.group, b.dataset.mode)));
   document.querySelectorAll(".item-fold").forEach(f => f.addEventListener("toggle", () => { if (f.open) loadItems(); }));
   document.querySelectorAll("[data-item-max]").forEach(b => b.addEventListener("click", () => {
-    const g = b.dataset.itemMax; $(g + "Count").value = fmtNum((itemData && itemData.max[g]) || (g === "eye" ? 9999 : 998)); updateItemStatus(g);
+    const g = b.dataset.itemMax; $(g + "Count").value = fmtNum(itemCap(g)); updateItemStatus(g);
   }));
   ITEM_GROUPS.forEach(g => $(g + "Count").addEventListener("input", (e) => {
-    const d = e.target.value.replace(/[^\d]/g, ""); const cap = (itemData && itemData.max[g]) || (g === "eye" ? 9999 : 998);
+    const d = e.target.value.replace(/[^\d]/g, ""); const cap = itemCap(g);
     e.target.value = d ? fmtNum(Math.min(+d, cap)) : ""; updateItemStatus(g);
   }));
 
