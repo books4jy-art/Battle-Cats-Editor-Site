@@ -207,7 +207,7 @@ def parse_edits(form) -> dict[str, Any] | str:
         return 'Type a level for the characters to level up.'
 
     # Catfruit/seeds, behemoth stones/gems, catseyes: "index:amount,index:amount".
-    for group, limit in (("fruit", 998), ("stone", 998), ("eye", 9999)):
+    for group, limit in (("fruit", 998), ("stone", 998), ("eye", 9999), ("battle", 9999), ("drink", 9999), ("chest", 9999)):
         raw = (form.get(f"items_{group}") or "").replace(" ", "")
         if not raw:
             continue

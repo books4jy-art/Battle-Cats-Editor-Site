@@ -320,7 +320,7 @@ def set_talent_orbs(save: core.SaveFile, spec: dict[str, Any]) -> str:
     return 'Set {n} talent orb type{s} to {count}'.format(n=n, s="" if n == 1 else "s", count=count)
 
 
-ITEM_GROUP_NAMES = {'fruit': 'Catfruit & seeds', 'stone': 'Behemoth stones & gems (crystals)', 'eye': 'Catseyes'}
+ITEM_GROUP_NAMES = {'fruit': 'Catfruit & seeds', 'stone': 'Behemoth stones & gems (crystals)', 'eye': 'Catseyes', 'battle': 'Battle items', 'drink': 'Catamins', 'chest': 'Treasure chests'}
 BEHEMOTH_GROUP = 9  # matatabi group of behemoth stones/gems (the "crystals")
 
 
@@ -357,19 +357,38 @@ def item_catalog(cc: core.CountryCode) -> dict[str, Any]:
             key = "seeds" if fr.seed else "fruit"
         parts[key].append((fr.sort, i, name or f"#{i}"))
 
-    def group(label: str, rows: list[tuple[int, int, str]]) -> dict[str, Any]:
+    def group(label: str, rows: list[tuple[int, int, str]], merge: bool = False) -> dict[str, Any]:
+        """[first index, short name, full name, [all indexes]]; merge=True folds same-named slots
+        into one button and drops placeholder names."""
         rows.sort()
-        full = [r[2] for r in rows]
-        return {"label": label, "items": [[r[1], s, f] for r, s, f in zip(rows, short_labels(full), full)]}
+        merged: dict[str, list[int]] = {}
+        for _, index, name in rows:
+            if merge and (name.strip() in ("", "＠", "@", "Unknown Item") or name.startswith("#")):
+                continue
+            merged.setdefault(name if merge else f"{index}\0{name}", []).append(index)
+        full = [k.split("\0")[-1] for k in merged]
+        return {"label": label, "items": [[ids[0], s, f, ids] for ids, s, f in zip(merged.values(), short_labels(full), full)]}
 
     item_names = core.core_data.get_gatya_item_names(save)
     eye_rows = [(i, i, item_names.get_name(it.id) or f"#{i}") for i, it in enumerate(eyes)]
+    buy = core.core_data.get_gatya_item_buy(save)
+
+    def gatya_rows(category: int) -> list[tuple[int, int, str]]:
+        items = buy.get_by_category(category) or []
+        return [(i, i, item_names.get_name(it.id) or f"#{i}") for i, it in enumerate(items)]
+
+    battle_names = save.battle_items.get_names(save) or []
+    battle_rows = [(i, i, n or f"#{i}") for i, n in enumerate(battle_names)]
     maxes = core.core_data.max_value_manager
     return {"ok": True, "cc": cc.get_code(),
             "fruit": [group('Seeds', parts["seeds"]), group('Fruit', parts["fruit"])],
             "stone": [group('Stones', parts["stones"]), group('Gems', parts["gems"])],
+            "battle": [group('Battle items', battle_rows)],
+            "drink": [group('Catamins', gatya_rows(6))],
+            "chest": [group('Treasure chests', gatya_rows(12), merge=True)],
             "eye": [group('Catseyes', eye_rows)],
-            "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes}}
+            "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes,
+                    "battle": maxes.battle_items, "drink": maxes.catamins, "chest": maxes.treasure_chests}}
 
 
 def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
@@ -377,6 +396,12 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
     maxes = core.core_data.max_value_manager
     if group == "eye":
         target, cap = save.catseyes, maxes.catseyes
+    elif group == "drink":
+        target, cap = save.catamins, maxes.catamins
+    elif group == "chest":
+        target, cap = save.treasure_chests, maxes.treasure_chests
+    elif group == "battle":
+        target, cap = save.battle_items.items, maxes.battle_items
     else:
         target = save.catfruit
         cap = maxes.catfruit_new if save.game_version >= 110400 else maxes.catfruit_old
@@ -384,13 +409,18 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
     # Keys arrive as strings after the JSON hop from app.py to this worker.
     for index, value in sorted((int(k), int(v)) for k, v in values.items()):
         if index < len(target):
-            target[index] = max(0, min(int(value), cap))
+            amount = max(0, min(int(value), cap))
+            if group == "battle":
+                target[index].amount = amount
+            else:
+                target[index] = amount
             set_count += 1
         else:
             missing.append(f"#{index}")
     if not set_count:
         raise RuntimeError('none of these items are in this save')
-    label = '{group}: set {n} type{s}'.format(group=ITEM_GROUP_NAMES[group], n=set_count, s="" if set_count == 1 else "s")
+    unit = "chest slot" if group == "chest" else "type"
+    label = f"{ITEM_GROUP_NAMES[group]}: set {set_count} {unit}{'' if set_count == 1 else 's'}"
     return label + (' (not in this save: {names})'.format(names=", ".join(missing)) if missing else "")
 
 
@@ -608,7 +638,7 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
             edit_cats(save, edits, attempt, done)
 
     # Catfruit & seeds, behemoth stones & gems, catseyes (indexes into the save's lists).
-    for group in ("fruit", "stone", "eye"):
+    for group in ("fruit", "stone", "eye", "battle", "drink", "chest"):
         if edits.get(f"items_{group}"):
             item_out: dict[str, str] = {}
             before = len(done)

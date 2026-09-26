@@ -23,7 +23,8 @@ characters picked with the **Lv** button, capped at each character's limit.
 The collapsible **Talent orbs** section sets how many of each orb type you have, for all orb types or
 by grade / trait / effect (only orb types that exist in your game version).
 Separate collapsible sections set the amount of each **Catfruit & seed**, **Behemoth stone & gem** (the
-"crystals") and **Catseye** type: one amount for all types or for the types you pick, like the talent orbs. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
+"crystals"), **Catseye**, **Battle item**, **Catamin** and **Treasure chest** type: one amount for all
+types or for the types you pick, like the talent orbs. There's also an option to upload to a new account ID (BCSFE's strict ban prevention).
 
 ## Run it on your computer
 
